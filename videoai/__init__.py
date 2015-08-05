@@ -22,7 +22,7 @@ class VideoAIUser(object):
         self.base_url = "http://localhost:5000"
         self.end_point = ''
 
-    def poll(self, task):
+    def wait(self, task):
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
         while not task['complete']:
             time.sleep(0.5)
@@ -54,7 +54,8 @@ class KamCheck(VideoAIUser):
         super(KamCheck, self).__init__(key_file=key_file, verbose=verbose)
         self.end_point = 'kamcheck'
 
-    def apply(self, image_file, video_file):
+    def request(self, image_file, video_file):
+
         image_file_size = os.path.getsize(image_file)/1000000.0
         video_file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested KamCheck on image {0} ({1} Mb) and video {2} ({3} Mb)'.format(image_file, image_file_size, video_file, video_file_size)
@@ -62,20 +63,21 @@ class KamCheck(VideoAIUser):
         files = {'image': open("{0}".format(image_file)),
                  'video': open("{0}".format(video_file))
         }
-
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
-        while not task['complete']:
-            time.sleep(0.5)
-            job_id = task['job_id']
-            url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-            response = requests.get(url, headers=self.header, allow_redirects=True)
-            task = response.json()['task']
-            if self.verbose:
-                print task
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("KamCheck request failed: {}". format(r.json()['message']))
 
+        if self.verbose:
+            print r.text
+
+        return r.json()['task']
+
+
+    def apply(self, image_file, video_file):
+        task = self.request(image_file, video_file)
+        task = self.wait(task)
         if not task['success']:
             print 'Failed Kamcheck: {0}'.format(task['message'])
         else:
@@ -97,11 +99,12 @@ class AlarmVerification(VideoAIUser):
         files = {'video': open("{0}".format(video_file))}
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
+
         if self.verbose:
             print r.text
-
-        if r.json()['status'] != 'success':
-            raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
 
         return r.json()['task']
 
@@ -111,7 +114,7 @@ class AlarmVerification(VideoAIUser):
         task = self.request(video_file)
 
         # keep checking until it is done
-        task = self.poll(task)
+        task = self.wait(task)
 
         # has the task been successful?
         if not task['success']:
@@ -130,7 +133,7 @@ class FaceDetectImage(VideoAIUser):
         super(FaceDetectImage, self).__init__(key_file=key_file, verbose=verbose)
         self.end_point = 'face_detect_image'
 
-    def apply(self, image_file, download=True, blur=0, min_size=30):
+    def request(self, image_file, blur, min_size):
 
         file_size = os.path.getsize(image_file)/1000000.0
         print 'Requested FaceDetectImage on {0} ({1} Mb)'.format(image_file, file_size)
@@ -141,19 +144,21 @@ class FaceDetectImage(VideoAIUser):
         files = {'image': open("{0}".format(image_file))}
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
 
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Face Detect request failed: {}". format(r.json()['message']))
+
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
         if self.verbose:
-            print task
+            print r.text
 
-        while not task['complete']:
-            time.sleep(0.5)
-            job_id = task['job_id']
-            url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-            response = requests.get(url, headers=self.header, allow_redirects=True)
-            task = response.json()['task']
-            if self.verbose:
-                print task
+        return task
+
+    def apply(self, image_file, download=True, blur=0, min_size=30):
+
+        task = self.request(image_file, blur, min_size)
+        task = self.wait(task)
 
         if not task['success']:
             print 'Failed FaceDetectImage: {0}'.format(task['message'])
@@ -183,10 +188,12 @@ class FaceDetect(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
 
         if r.json()['status'] != 'success':
+            print r.text
             raise Exception("Face Detect request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
+
         if self.verbose:
             print task
 
@@ -196,7 +203,7 @@ class FaceDetect(VideoAIUser):
 
         task = self.request(video_file, blur, start_frame, max_frames, min_size)
 
-        task = self.poll(task)
+        task = self.wait(task)
 
         if not task['success']:
             print 'Failed FaceDetect: {0}'.format(task['message'])
@@ -215,30 +222,34 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(key_file=key_file, verbose=verbose)
         self.end_point = 'face_log'
 
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30):
+    def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30):
 
         file_size = os.path.getsize(video_file)/1000000.0
-        print 'Requested FaceLog on file {0} ({1} Mb)'.format(video_file, file_size)
-
+        print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
         data = {'blur': blur, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
         files = {'video': open("{0}".format(video_file))}
+
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Face Detect request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
         if self.verbose:
             print task
 
-        while not task['complete']:
-            time.sleep(0.5)
-            job_id = task['job_id']
-            url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-            response = requests.get(url, headers=self.header, allow_redirects=True)
-            task = response.json()['task']
-            if self.verbose:
-                print task
+        return task
+
+
+    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30):
+
+        task = self.request(video_file, blur, start_frame, max_frames, min_size)
+
+        task = self.wait(task)
 
         if not task['success']:
             print 'Failed FaceLog: {0}'.format(task['message'])
