@@ -12,7 +12,7 @@ def zero_or_one(value):
 
 def min_size(value):
     ivalue = int(value)
-    if ivalue < 30:
+    if ivalue < 20:
          raise argparse.ArgumentTypeError("%s is too small" % value)
     return ivalue
 

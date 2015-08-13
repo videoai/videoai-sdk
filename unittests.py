@@ -13,7 +13,6 @@ alarm_verification_data_dir = os.path.join('..', 'test-data', 'AlarmVerification
 face_detect_data_dir = os.path.join('..', 'test-data', 'FaceDetector')
 
 
-    
 class TestKamCheck(unittest.TestCase):
 
         def do_kam_check(self, image_file, video_file):
@@ -93,27 +92,76 @@ class TestFaceDetectImage(unittest.TestCase):
 
 class TestFaceDetect(unittest.TestCase):
 
+        class TestData:
+            def __init__(self, video_file, frames, max_frames, number_of_faces):
+                self.video_file = video_file
+                self.frames = frames
+                self.max_frames = max_frames
+                self.number_of_faces = number_of_faces
+                self.verbose = True
+
         # Do the actual alarm verification
-        def do_face_detect(self, video_file, max_frames):
-            video_path = os.path.join(face_detect_data_dir, video_file)
-            face_detect = FaceDetect()
-            task = face_detect.apply(video_file=video_path, max_frames=max_frames)
+        def do_face_detect(self, test_data):
+            video_path = os.path.join(face_detect_data_dir, test_data.video_file)
+            face_detect = FaceDetect(verbose=test_data.verbose)
+            task = face_detect.apply(video_file=video_path, max_frames=test_data.max_frames)
+            return task
+
+        # Test on some known videos
+        def test_face_detect(self):
+            print "Testing face detection..."
+            #TestFaceDetect.TestData('demoFaceDetect.avi', 1138, 200, 54),
+            test_data = [
+                        TestFaceDetect.TestData('officeEntry.mp4', frames=81, max_frames=0, number_of_faces=4),
+                        TestFaceDetect.TestData('officeEntry.mp4', frames=81, max_frames=20, number_of_faces=0)
+            ]
+
+            for this_test in test_data:
+                print "** Video File {0} w **".format(this_test.video_file)
+                task = self.do_face_detect(this_test)
+                self.assert_(task['analytic'], "face_detect")
+                self.assertTrue(task['complete'])
+                self.assertEqual(task['number_of_faces'], this_test.number_of_faces)
+                if this_test.max_frames == 0:
+                    this_test.max_frames = this_test.frames
+                self.assertEqual(task['frames_processed'], this_test.max_frames)
+
+
+class TestFaceLog(unittest.TestCase):
+
+        class TestData:
+            def __init__(self, video_file, frames, max_frames, number_of_sightings):
+                self.video_file = video_file
+                self.frames = frames
+                self.max_frames = max_frames
+                self.number_of_sightings = number_of_sightings
+                self.verbose = True
+
+        # Do the actual alarm verification
+        def do_face_log(self, test_data):
+            video_path = os.path.join(face_detect_data_dir, test_data.video_file)
+            face_log = FaceLog(verbose=True)
+            task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames)
             return task
 
         # Test on some known videos
         def test_face_detect(self):
             print "Testing face detection..."
 
-            #test_data = { 'tracking.mov': [25, 18],  'demoFaceDetect.avi': [200, 57], 'glasgow.mpg': [50, 0] }
-            test_data = { 'demoFaceDetect.avi': [50, 57] }
+            test_data = [
+                        TestFaceLog.TestData('officeEntry.mp4', frames=81, max_frames=0, number_of_sightings=1),
+                        TestFaceLog.TestData('officeEntry.mp4', frames=81, max_frames=20, number_of_sightings=0)
+            ]
 
-            for key, value in test_data.iteritems():
-                print "** Testing {0} with expected result {1} **".format(key, value)
-                task = self.do_face_detect(key, value[0])
+            for this_test in test_data:
+                print "** Testing {0} **".format(this_test.video_file)
+                task = self.do_face_log(this_test)
                 self.assert_(task['analytic'], "face_detect")
                 self.assertTrue(task['complete'])
-                self.assertEqual(task['number_of_faces'], value[1])
-
+                self.assertEqual(task['number_of_sightings'], this_test.number_of_sightings)
+                if this_test.max_frames == 0:
+                    this_test.max_frames = this_test.frames
+                self.assertEqual(task['frames_processed'], this_test.max_frames)
 
 if __name__ == '__main__':
     unittest.main()
