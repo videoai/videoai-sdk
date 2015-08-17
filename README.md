@@ -5,6 +5,8 @@ In this repository there is an SDK for calling the VideoAI video analyics API.  
 
 To see a demo-portal for VideoAI, built using this SDK and the VideoAI API, point your browser to https://demo.videoai.net.
 
+Documentation on the actual VideoAI REST API can be found at https://videoai.net/api.
+
 ## Authentication
 
 To use VideoAI you will need a pair of developer keys.  You can request these through the demo web-site.
