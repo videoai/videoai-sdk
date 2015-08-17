@@ -58,7 +58,7 @@ class TestAlarmVerification(unittest.TestCase):
             print "Testing alarm verification..."
 
             #test_data = { 'Alarm.mpg':100, 'NoAlarm.mpg':2, '1.avi':100, '2.avi':100 }
-            test_data = { 'intrusion.avi':100, 'officeEntry.mp4':100, 'windy.avi':100 }
+            test_data = { 'intrusion.avi':100, 'officeEntry.mp4':100 }
             for key, value in test_data.iteritems():
                 print "** Testing {0} with expected result {1} **".format(key, value)
                 task = self.do_alarm_verification(key)
@@ -130,18 +130,19 @@ class TestFaceDetect(unittest.TestCase):
 class TestFaceLog(unittest.TestCase):
 
         class TestData:
-            def __init__(self, video_file, frames, max_frames, number_of_sightings):
+            def __init__(self, video_file, frames, max_frames, number_of_sightings, min_certainty=1):
                 self.video_file = video_file
                 self.frames = frames
                 self.max_frames = max_frames
                 self.number_of_sightings = number_of_sightings
+                self.min_certainty = min_certainty
                 self.verbose = True
 
         # Do the actual alarm verification
         def do_face_log(self, test_data):
             video_path = os.path.join(face_detect_data_dir, test_data.video_file)
             face_log = FaceLog(verbose=True)
-            task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames)
+            task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames, min_certainty=test_data.min_certainty)
             return task
 
         # Test on some known videos
@@ -149,8 +150,8 @@ class TestFaceLog(unittest.TestCase):
             print "Testing face detection..."
 
             test_data = [
-                        TestFaceLog.TestData('officeEntry.mp4', frames=81, max_frames=0, number_of_sightings=1),
-                        TestFaceLog.TestData('officeEntry.mp4', frames=81, max_frames=20, number_of_sightings=0)
+                        TestFaceLog.TestData(video_file='officeEntry.mp4', frames=81, max_frames=0, number_of_sightings=1, min_certainty=0),
+                        TestFaceLog.TestData(video_file='officeEntry.mp4', frames=81, max_frames=20, number_of_sightings=0)
             ]
 
             for this_test in test_data:

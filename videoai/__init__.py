@@ -19,7 +19,8 @@ class VideoAIUser(object):
         self.header = {'Authorization': basic_auth_header}
         #self.base_url = "https://api.videoai.net"
         self.verbose = verbose
-        self.base_url = "http://localhost:5000"
+        #self.base_url = "http://localhost:5000"
+        self.base_url = "http://54.195.251.39:5000"
         self.end_point = ''
 
     def wait(self, task):
@@ -222,11 +223,11 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(key_file=key_file, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30):
+    def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'blur': blur, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size}
+        data = {'blur': blur, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
         files = {'video': open("{0}".format(video_file))}
@@ -244,17 +245,15 @@ class FaceLog(VideoAIUser):
 
         return task
 
+    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0):
 
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30):
-
-        task = self.request(video_file, blur, start_frame, max_frames, min_size)
+        task = self.request(video_file, blur, start_frame, max_frames, min_size, min_certainty)
 
         task = self.wait(task)
 
         if not task['success']:
             print 'Failed FaceLog: {0}'.format(task['message'])
             return task
-
 
         if download:
             self.download_file(task['results_video'])
