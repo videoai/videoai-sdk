@@ -25,6 +25,8 @@ The main Python videoai class will then pick them up and use them to authenticat
 
 There is a simple command line tool you can use to test most of VideoAI's current functionality.
 
+The tool has a dependency on configparser: you can install this with "pip install configparser".
+
 ```
 python videoai.py --help
 
