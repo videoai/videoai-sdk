@@ -19,8 +19,8 @@ class VideoAIUser(object):
         self.header = {'Authorization': basic_auth_header}
         #self.base_url = "https://api.videoai.net"
         self.verbose = verbose
-        #self.base_url = "http://localhost:5000"
-        self.base_url = "http://54.195.251.39:5000"
+        self.base_url = "http://localhost:5000"
+        #self.base_url = "http://54.195.251.39:5000"
         self.end_point = ''
 
     def wait(self, task):
@@ -236,7 +236,7 @@ class FaceLog(VideoAIUser):
 
         if r.json()['status'] != 'success':
             print r.text
-            raise Exception("Face Detect request failed: {}". format(r.json()['message']))
+            raise Exception("face_log request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
@@ -263,3 +263,50 @@ class FaceLog(VideoAIUser):
                 self.download_file(sighting['thumbnail'])
 
         return task
+
+
+class SafeZone2d(VideoAIUser):
+
+    def __init__(self, key_file = '', verbose=False):
+        super(SafeZone2d, self).__init__(key_file=key_file, verbose=verbose)
+        self.end_point = 'safezone_2d'
+
+    def request(self, video_file, start_frame=0, max_frames=0):
+
+        file_size = os.path.getsize(video_file)/1000000.0
+        print 'Requested SafeZone2d on video {0} ({1} Mb)'.format(video_file, file_size)
+        data = {'start_frame': start_frame, 'max_frames': max_frames}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        files = {'video': open("{0}".format(video_file))}
+
+        r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("safezone_2d request failed: {}". format(r.json()['message']))
+
+        # while the task is not complete, lets keep checking it
+        task = r.json()['task']
+        if self.verbose:
+            print task
+
+        return task
+
+    def apply(self, video_file, download=True, start_frame=0, max_frames=0):
+
+        task = self.request(video_file, start_frame, max_frames)
+
+        task = self.wait(task)
+
+        if not task['success']:
+            print 'Failed SafeZone2d: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['results_video'])
+            self.download_file(task['results_xml'])
+
+        return task
+
+

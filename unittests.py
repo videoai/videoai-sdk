@@ -1,5 +1,5 @@
 from twisted.conch.test.test_transport import factory
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog
+from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
 
 import unittest
 import base64
@@ -8,10 +8,10 @@ import os
 import json
 import time
 
-kamcheck_data_dir = os.path.join('..', 'test-data', 'KamCheck')
-alarm_verification_data_dir = os.path.join('..', 'test-data', 'AlarmVerification')
-face_detect_data_dir = os.path.join('..', 'test-data', 'FaceDetector')
-
+kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
+alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
+face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
+safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
 
 class TestKamCheck(unittest.TestCase):
 
@@ -146,7 +146,7 @@ class TestFaceLog(unittest.TestCase):
             return task
 
         # Test on some known videos
-        def test_face_detect(self):
+        def test_face_log(self):
             print "Testing face detection..."
 
             test_data = [
@@ -160,6 +160,40 @@ class TestFaceLog(unittest.TestCase):
                 self.assert_(task['analytic'], "face_detect")
                 self.assertTrue(task['complete'])
                 self.assertEqual(task['number_of_sightings'], this_test.number_of_sightings)
+                if this_test.max_frames == 0:
+                    this_test.max_frames = this_test.frames
+                self.assertEqual(task['frames_processed'], this_test.max_frames)
+
+
+class TestSafeZone2d(unittest.TestCase):
+
+        class TestData:
+            def __init__(self, video_file, frames, max_frames):
+                self.video_file = video_file
+                self.frames = frames
+                self.max_frames = max_frames
+                self.verbose = True
+
+        # Do the actual alarm verification
+        def do_safezone_2d(self, test_data):
+            video_path = os.path.join(safezone_data_dir, test_data.video_file)
+            safezone_2d = SafeZone2d(verbose=True)
+            task = safezone_2d.apply(video_file=video_path, max_frames=test_data.max_frames)
+            return task
+
+        # Test on some known videos
+        def test_safezone2d(self):
+            print "Testing SafeZone2d..."
+
+            test_data = [
+                TestSafeZone2d.TestData(video_file='vegetation.avi', frames=667, max_frames=0),
+            ]
+
+            for this_test in test_data:
+                print "** Testing {0} **".format(this_test.video_file)
+                task = self.do_safezone_2d(this_test)
+                self.assert_(task['analytic'], "safezone_2d")
+                self.assertTrue(task['complete'])
                 if this_test.max_frames == 0:
                     this_test.max_frames = this_test.frames
                 self.assertEqual(task['frames_processed'], this_test.max_frames)
