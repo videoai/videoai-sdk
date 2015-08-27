@@ -7,7 +7,7 @@ from os.path import expanduser
 
 class VideoAIUser(object):
 
-    def __init__(self, key_file, verbose):
+    def __init__(self, key_file='', verbose=False):
         if not key_file:
             home = expanduser("~")
             key_file = os.path.join(home, '.videoai')
@@ -19,7 +19,7 @@ class VideoAIUser(object):
         self.header = {'Authorization': basic_auth_header}
         #self.base_url = "https://api.videoai.net"
         self.verbose = verbose
-        self.base_url = "http://localhost:5000"
+        self.base_url = "http://192.168.90.53:5000"
         #self.base_url = "http://54.195.251.39:5000"
         self.end_point = ''
 
@@ -48,6 +48,24 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
+    def tasks(self):
+        '''
+        Get a list of all tasks
+        :return:
+        '''
+        url = "{0}/task".format(self.base_url)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.json()
+
+    def task(self, job_id):
+        '''
+        Get a specific task
+        :return:
+        '''
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.json()
+
 
 class KamCheck(VideoAIUser):
 
@@ -75,9 +93,12 @@ class KamCheck(VideoAIUser):
 
         return r.json()['task']
 
-
-    def apply(self, image_file, video_file):
+    def apply(self, image_file, video_file, wait_until_finished=True):
         task = self.request(image_file, video_file)
+
+        if not wait_until_finished:
+            return task
+
         task = self.wait(task)
         if not task['success']:
             print 'Failed Kamcheck: {0}'.format(task['message'])
@@ -109,10 +130,14 @@ class AlarmVerification(VideoAIUser):
 
         return r.json()['task']
 
-    def apply(self, video_file, download=True):
+    def apply(self, video_file, download=True, wait_until_finished=True):
 
         # do initial request
         task = self.request(video_file)
+
+        print 'wait...'
+        if not wait_until_finished:
+            return task
 
         # keep checking until it is done
         task = self.wait(task)
@@ -156,9 +181,13 @@ class FaceDetectImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, blur=0, min_size=30):
+    def apply(self, image_file, download=True, blur=0, min_size=30, wait_until_finished=True):
 
         task = self.request(image_file, blur, min_size)
+
+        if not wait_until_finished:
+            return task
+
         task = self.wait(task)
 
         if not task['success']:
@@ -200,9 +229,12 @@ class FaceDetect(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30):
+    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30, wait_until_finished=True):
 
         task = self.request(video_file, blur, start_frame, max_frames, min_size)
+
+        if not wait_until_finished:
+            return task
 
         task = self.wait(task)
 
@@ -245,9 +277,12 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0):
+    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
 
         task = self.request(video_file, blur, start_frame, max_frames, min_size, min_certainty)
+
+        if not wait_until_finished:
+            return task
 
         task = self.wait(task)
 
@@ -293,9 +328,12 @@ class SafeZone2d(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, start_frame=0, max_frames=0):
+    def apply(self, video_file, download=True, start_frame=0, max_frames=0, wait_until_finished=True):
 
         task = self.request(video_file, start_frame, max_frames)
+
+        if not wait_until_finished:
+            return task
 
         task = self.wait(task)
 
