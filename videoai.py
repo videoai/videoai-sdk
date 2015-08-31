@@ -29,6 +29,7 @@ parser.add_argument('--face-log', dest='face_log', action='store_true', help='Pe
 parser.add_argument('--download', dest='download', action='store_true', help='Download any results')
 parser.add_argument('--no-download', dest='download', action='store_false', help='Do not download any results')
 parser.add_argument('--blur', dest='blur', type=zero_or_one, default=0, help='If doing some face-detection, blur the faces in the output media')
+parser.add_argument('--gender', dest='gender', type=zero_or_one, default=0, help='If doing face-log, detect the gender of the faces')
 parser.add_argument('--start-frame', dest='start_frame', default=0, help='Start processing at this frame in the video')
 parser.add_argument('--max-frames', dest='max_frames', default=0, help='Process this many frames (0 do all)')
 parser.add_argument('--min-size', dest='min_size', type=min_size, default=30, help='If searching for objects (e.g. faces) then this is the minimum size')
@@ -69,7 +70,7 @@ if args.face_log:
     face_log = FaceLog(verbose=args.verbose)
     task = face_log.apply(video_file=args.video,
                           download=args.download,
-                          blur=args.blur,
+                          gender=args.gender,
                           start_frame=args.start_frame,
                           max_frames=args.max_frames,
                           min_size=args.min_size)

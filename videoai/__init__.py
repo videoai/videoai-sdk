@@ -255,13 +255,14 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(key_file=key_file, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
+    def request(self, video_file, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'blur': blur, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
+        data = {'gender': gender, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
+
         files = {'video': open("{0}".format(video_file))}
 
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
@@ -277,9 +278,9 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
+    def apply(self, video_file, download=True, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
 
-        task = self.request(video_file, blur, start_frame, max_frames, min_size, min_certainty)
+        task = self.request(video_file, gender=gender, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
 
         if not wait_until_finished:
             return task
