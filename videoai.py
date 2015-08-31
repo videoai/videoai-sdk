@@ -1,4 +1,4 @@
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog
+from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
 import argparse
 
 
@@ -26,6 +26,7 @@ parser.add_argument('--alarm-verification', dest='alarm_verification', action='s
 parser.add_argument('--face-detect', dest='face_detect', action='store_true', help='Perform FaceDetect on video')
 parser.add_argument('--face-detect-image', dest='face_detect_image', action='store_true', help='Perform FaceDetect on image')
 parser.add_argument('--face-log', dest='face_log', action='store_true', help='Perform FaceLog on video')
+parser.add_argument('--safezone-2d', dest='safezone_2d', action='store_true', help='Perform SafeZone.2d on video')
 parser.add_argument('--download', dest='download', action='store_true', help='Download any results')
 parser.add_argument('--no-download', dest='download', action='store_false', help='Do not download any results')
 parser.add_argument('--blur', dest='blur', type=zero_or_one, default=0, help='If doing some face-detection, blur the faces in the output media')
@@ -74,3 +75,11 @@ if args.face_log:
                           start_frame=args.start_frame,
                           max_frames=args.max_frames,
                           min_size=args.min_size)
+
+if args.safezone_2d:
+    print "performing safezone_2d"
+    safezone_2d = SafeZone2d(key_file=args.key_file, verbose=args.verbose)
+    task = safezone_2d.apply(video_file=args.video,
+                             start_frame=args.start_frame,
+                             max_frames=args.max_frames,
+                             download=args.download)
