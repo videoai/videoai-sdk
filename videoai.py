@@ -20,6 +20,7 @@ def min_size(value):
 parser = argparse.ArgumentParser(description='VideoAI command line tool.', epilog='Have fun using VideoAI.')
 parser.add_argument('-i', '--image', dest='image', help='specify an image')
 parser.add_argument('-v', '--video', dest='video', help='specify a video to use')
+parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--kamcheck', dest='kamcheck', action='store_true', help='Perform kamcheck on image and video')
 parser.add_argument('--alarm-verification', dest='alarm_verification', action='store_true', help='Perform alarm verification on video')
@@ -40,17 +41,17 @@ args = parser.parse_args()
 
 if args.kamcheck:
     print "performing kamcheck"
-    kamcheck = KamCheck(verbose=args.verbose)
+    kamcheck = KamCheck(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = kamcheck.apply(image_file=args.image, video_file=args.video)
 
 if args.alarm_verification:
     print "performing alarm verification"
-    alarm_verification = AlarmVerification(key_file=args.key_file, verbose=args.verbose)
+    alarm_verification = AlarmVerification(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = alarm_verification.apply(video_file=args.video, download=args.download)
 
 if args.face_detect:
     print "performing face detection"
-    face_detect = FaceDetect(verbose=args.verbose)
+    face_detect = FaceDetect(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = face_detect.apply(video_file=args.video,
                              download=args.download,
                              blur=args.blur,
@@ -60,7 +61,7 @@ if args.face_detect:
 
 if args.face_detect_image:
     print "performing face detection on image"
-    face_detect_image = FaceDetectImage(verbose=args.verbose)
+    face_detect_image = FaceDetectImage(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = face_detect_image.apply(image_file=args.image,
                                    download=args.download,
                                    blur=args.blur,
@@ -68,7 +69,7 @@ if args.face_detect_image:
 
 if args.face_log:
     print "performing face log"
-    face_log = FaceLog(verbose=args.verbose)
+    face_log = FaceLog(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = face_log.apply(video_file=args.video,
                           download=args.download,
                           gender=args.gender,
@@ -78,7 +79,7 @@ if args.face_log:
 
 if args.safezone_2d:
     print "performing safezone_2d"
-    safezone_2d = SafeZone2d(key_file=args.key_file, verbose=args.verbose)
+    safezone_2d = SafeZone2d(host=args.host, key_file=args.key_file, verbose=args.verbose)
     task = safezone_2d.apply(video_file=args.video,
                              start_frame=args.start_frame,
                              max_frames=args.max_frames,

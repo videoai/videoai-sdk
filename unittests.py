@@ -12,6 +12,7 @@ kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
 alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
 face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
+host = "http://54.195.251.39:5000"
 
 class TestKamCheck(unittest.TestCase):
 
@@ -20,7 +21,7 @@ class TestKamCheck(unittest.TestCase):
             image_path = os.path.join(kamcheck_data_dir, image_file)
             video_path = os.path.join(kamcheck_data_dir, video_file)
 
-            kamcheck = KamCheck()
+            kamcheck = KamCheck(host=host)
             task = kamcheck.apply(image_file=image_path, video_file=video_path)
             print task
             return task
@@ -48,7 +49,7 @@ class TestAlarmVerification(unittest.TestCase):
         # Do the actual alarm verification
         def do_alarm_verification(self, video_file):
             video_path = os.path.join(alarm_verification_data_dir, video_file)
-            alarm_verification = AlarmVerification()
+            alarm_verification = AlarmVerification(host=host)
             task = alarm_verification.apply(video_file=video_path)
             print task
             return task
@@ -71,7 +72,7 @@ class TestFaceDetectImage(unittest.TestCase):
         # Do the actual alarm verification
         def do_face_detect(self, image_file):
 
-            face_detect_image = FaceDetectImage(verbose=True)
+            face_detect_image = FaceDetectImage(host=host)
             image_path = os.path.join(face_detect_data_dir, image_file)
             task = face_detect_image.apply(image_path)
             return task
@@ -103,7 +104,7 @@ class TestFaceDetect(unittest.TestCase):
         # Do the actual alarm verification
         def do_face_detect(self, test_data):
             video_path = os.path.join(face_detect_data_dir, test_data.video_file)
-            face_detect = FaceDetect(verbose=test_data.verbose)
+            face_detect = FaceDetect(host=host, verbose=test_data.verbose)
             task = face_detect.apply(video_file=video_path, max_frames=test_data.max_frames)
             return task
 
@@ -141,7 +142,7 @@ class TestFaceLog(unittest.TestCase):
         # Do the actual alarm verification
         def do_face_log(self, test_data):
             video_path = os.path.join(face_detect_data_dir, test_data.video_file)
-            face_log = FaceLog(verbose=True)
+            face_log = FaceLog(host=host, verbose=True)
             task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames, min_certainty=test_data.min_certainty)
             return task
 
@@ -177,7 +178,7 @@ class TestSafeZone2d(unittest.TestCase):
         # Do the actual alarm verification
         def do_safezone_2d(self, test_data):
             video_path = os.path.join(safezone_data_dir, test_data.video_file)
-            safezone_2d = SafeZone2d(verbose=True)
+            safezone_2d = SafeZone2d(host=host, verbose=True)
             task = safezone_2d.apply(video_file=video_path, max_frames=test_data.max_frames)
             return task
 
