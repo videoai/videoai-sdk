@@ -7,21 +7,25 @@ from os.path import expanduser
 
 class VideoAIUser(object):
 
-    def __init__(self, key_file='', verbose=False):
-        if not key_file:
-            home = expanduser("~")
-            key_file = os.path.join(home, '.videoai')
-        config = configparser.ConfigParser()
-        config.read(key_file)
-        keys = config['videoai.net']
-        apiKey = "{0}:{1}".format(keys['apiKey_id'], keys['apiKey_secret'])
-        basic_auth_header = "Basic {0}".format(base64.b64encode(apiKey))
+    def __init__(self, key_file='', api_id='', api_secret='', verbose=False):
+
+        if not api_id or not api_secret:
+            if not key_file:
+                home = expanduser("~")
+                key_file = os.path.join(home, '.videoai')
+            config = configparser.ConfigParser()
+            config.read(key_file)
+            keys = config['videoai.net']
+            api_key = "{0}:{1}".format(keys['apiKey_id'], keys['apiKey_secret'])
+        else:
+            api_key = "{0}:{1}".format(api_id, api_secret)
+        basic_auth_header = "Basic {0}".format(base64.b64encode(api_key))
         self.header = {'Authorization': basic_auth_header}
         #self.base_url = "https://api.videoai.net"
         self.verbose = verbose
         self.base_url = "http://192.168.90.53:5000"
         #self.base_url = "http://54.195.251.39:5000"
-        self.end_point = ''
+        self.end_point = 'task'
 
     def wait(self, task):
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
@@ -69,8 +73,8 @@ class VideoAIUser(object):
 
 class KamCheck(VideoAIUser):
 
-    def __init__(self, key_file = '', verbose=False):
-        super(KamCheck, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file = '', api_id='', api_secret='', verbose=False):
+        super(KamCheck, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'kamcheck'
 
     def request(self, image_file, video_file):
@@ -109,8 +113,8 @@ class KamCheck(VideoAIUser):
 
 class AlarmVerification(VideoAIUser):
 
-    def __init__(self, key_file = '', verbose=False):
-        super(AlarmVerification, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file = '', api_id='', api_secret='', verbose=False):
+        super(AlarmVerification, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'alarm_verification'
 
     def request(self, video_file):
@@ -155,8 +159,8 @@ class AlarmVerification(VideoAIUser):
 
 class FaceDetectImage(VideoAIUser):
 
-    def __init__(self, key_file='', verbose=False):
-        super(FaceDetectImage, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file='', api_id='', api_secret='', verbose=False):
+        super(FaceDetectImage, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_detect_image'
 
     def request(self, image_file, blur, min_size):
@@ -202,8 +206,8 @@ class FaceDetectImage(VideoAIUser):
 
 class FaceDetect(VideoAIUser):
 
-    def __init__(self, key_file = '', verbose=False):
-        super(FaceDetect, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file = '', api_id='', api_secret='', verbose=False):
+        super(FaceDetect, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_detect'
 
     def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30):
@@ -251,8 +255,8 @@ class FaceDetect(VideoAIUser):
 
 class FaceLog(VideoAIUser):
 
-    def __init__(self, key_file = '', verbose=False):
-        super(FaceLog, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file = '', api_id='', api_secret='', verbose=False):
+        super(FaceLog, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
     def request(self, video_file, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
@@ -303,8 +307,8 @@ class FaceLog(VideoAIUser):
 
 class SafeZone2d(VideoAIUser):
 
-    def __init__(self, key_file = '', verbose=False):
-        super(SafeZone2d, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, key_file = '', api_id='', api_secret='', verbose=False):
+        super(SafeZone2d, self).__init__(key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'safezone_2d'
 
     def request(self, video_file, start_frame=0, max_frames=0):
