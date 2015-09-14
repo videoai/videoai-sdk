@@ -12,7 +12,8 @@ kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
 alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
 face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
-host = "http://54.195.251.39:5000"
+#host="http://api2"
+host="http://192.168.90.53:5000"
 
 class TestKamCheck(unittest.TestCase):
 
@@ -113,7 +114,7 @@ class TestFaceDetect(unittest.TestCase):
             print "Testing face detection..."
             #TestFaceDetect.TestData('demoFaceDetect.avi', 1138, 200, 54),
             test_data = [
-                        TestFaceDetect.TestData('officeEntry.mp4', frames=81, max_frames=0, number_of_faces=4),
+                        TestFaceDetect.TestData('officeEntry.mp4', frames=81, max_frames=0, number_of_faces=5),
                         TestFaceDetect.TestData('officeEntry.mp4', frames=81, max_frames=20, number_of_faces=0)
             ]
 

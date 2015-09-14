@@ -31,56 +31,80 @@ parser.add_argument('--safezone-2d', dest='safezone_2d', action='store_true', he
 parser.add_argument('--download', dest='download', action='store_true', help='Download any results')
 parser.add_argument('--no-download', dest='download', action='store_false', help='Do not download any results')
 parser.add_argument('--blur', dest='blur', type=zero_or_one, default=0, help='If doing some face-detection, blur the faces in the output media')
-parser.add_argument('--gender', dest='gender', type=zero_or_one, default=0, help='If doing face-log, detect the gender of the faces')
+parser.add_argument('--gender', dest='gender', action='store_true', help='If doing face-log, detect the gender of the faces')
 parser.add_argument('--start-frame', dest='start_frame', default=0, help='Start processing at this frame in the video')
+parser.add_argument('--min-certainty', dest='min_certainty', default=1.0, help='Minimum certainty to keep when doing face-log')
 parser.add_argument('--max-frames', dest='max_frames', default=0, help='Process this many frames (0 do all)')
 parser.add_argument('--min-size', dest='min_size', type=min_size, default=30, help='If searching for objects (e.g. faces) then this is the minimum size')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose')
+parser.add_argument('--tasks', dest='tasks', action='store_true', help='List all tasks')
 parser.set_defaults(download=True)
 args = parser.parse_args()
 
 if args.kamcheck:
     print "performing kamcheck"
     kamcheck = KamCheck(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = kamcheck.apply(image_file=args.image, video_file=args.video)
+    if args.tasks:
+        kamcheck.tasks()
+    else:
+        task = kamcheck.apply(image_file=args.image, video_file=args.video)
 
 if args.alarm_verification:
     print "performing alarm verification"
     alarm_verification = AlarmVerification(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = alarm_verification.apply(video_file=args.video, download=args.download)
+    if args.tasks:
+        alarm_verification.tasks()
+    else:
+        tasks = alarm_verification.apply(video_file=args.video, download=args.download)
 
 if args.face_detect:
     print "performing face detection"
     face_detect = FaceDetect(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = face_detect.apply(video_file=args.video,
-                             download=args.download,
-                             blur=args.blur,
-                             start_frame=args.start_frame,
-                             max_frames=args.max_frames,
-                             min_size=args.min_size)
+    if args.tasks:
+        face_detect.tasks()
+    else:
+        task = face_detect.apply(video_file=args.video,
+                                 download=args.download,
+                                 blur=args.blur,
+                                 start_frame=args.start_frame,
+                                 max_frames=args.max_frames,
+                                 min_size=args.min_size)
 
 if args.face_detect_image:
     print "performing face detection on image"
     face_detect_image = FaceDetectImage(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = face_detect_image.apply(image_file=args.image,
-                                   download=args.download,
-                                   blur=args.blur,
-                                   min_size=args.min_size)
+    if args.tasks:
+        face_detect_image.tasks()
+    else:
+        task = face_detect_image.apply(image_file=args.image,
+                                       download=args.download,
+                                       blur=args.blur,
+                                       min_size=args.min_size)
 
 if args.face_log:
     print "performing face log"
     face_log = FaceLog(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = face_log.apply(video_file=args.video,
-                          download=args.download,
-                          gender=args.gender,
-                          start_frame=args.start_frame,
-                          max_frames=args.max_frames,
-                          min_size=args.min_size)
+    if args.tasks:
+        face_log.tasks()
+    else:
+        task = face_log.apply(video_file=args.video,
+                              download=args.download,
+                              gender=args.gender,
+                              start_frame=args.start_frame,
+                              max_frames=args.max_frames,
+                              min_size=args.min_size,
+                              min_certainty=args.min_certainty)
 
 if args.safezone_2d:
     print "performing safezone_2d"
     safezone_2d = SafeZone2d(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    task = safezone_2d.apply(video_file=args.video,
-                             start_frame=args.start_frame,
-                             max_frames=args.max_frames,
-                             download=args.download)
+    if args.tasks:
+        safezone_2d.tasks()
+    else:
+        task = safezone_2d.apply(video_file=args.video,
+                                 start_frame=args.start_frame,
+                                 max_frames=args.max_frames,
+                                 download=args.download)
+
+
+

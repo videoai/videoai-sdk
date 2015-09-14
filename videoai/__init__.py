@@ -5,6 +5,20 @@ import requests
 import time
 from os.path import expanduser
 
+def print_http_response(r):
+    '''
+    Print the http response
+    :param r: The response of a request
+    :return:
+    '''
+    print "HTTP/1.0 {} OK".format(r.status_code)
+    print "Content-Type: {}".format(r.headers['content-type'])
+    print "Content-Length: {}".format(r.headers['content-length'])
+    print "Server: {}".format(r.headers['server'])
+    print "Date: {}".format(r.headers['date'])
+    print r.text
+
+
 class VideoAIUser(object):
 
     def __init__(self,  host='', key_file='', api_id='', api_secret='', verbose=False):
@@ -31,6 +45,10 @@ class VideoAIUser(object):
 
     def wait(self, task):
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
+
+        if task['complete']:
+            return task
+
         while not task['complete']:
             time.sleep(0.5)
             r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -39,6 +57,9 @@ class VideoAIUser(object):
             task = r.json()['task']
             if self.verbose:
                 print task
+
+        if self.verbose:
+            print print_http_response(r)
 
         return task
 
@@ -59,8 +80,11 @@ class VideoAIUser(object):
         Get a list of all tasks
         :return:
         '''
-        url = "{0}/task".format(self.base_url)
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        print url
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print_http_response(r)
         return r.json()
 
     def task(self, job_id):
@@ -70,6 +94,8 @@ class VideoAIUser(object):
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print_http_response(r)
         return r.json()
 
 
@@ -91,11 +117,11 @@ class KamCheck(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("KamCheck request failed: {}". format(r.json()['message']))
 
         if self.verbose:
-            print r.text
+            print print_http_response(r)
 
         return r.json()['task']
 
@@ -128,11 +154,11 @@ class AlarmVerification(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
 
         if self.verbose:
-            print r.text
+            print print_http_response(r)
 
         return r.json()['task']
 
@@ -179,13 +205,13 @@ class FaceDetectImage(VideoAIUser):
             return
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("Face Detect request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
         if self.verbose:
-            print r.text
+            print print_http_response(r)
 
         return task
 
@@ -226,14 +252,14 @@ class FaceDetect(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("Face Detect request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
 
         if self.verbose:
-            print task
+            print print_http_response(r)
 
         return task
 
@@ -276,13 +302,13 @@ class FaceLog(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("face_log request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
         if self.verbose:
-            print task
+            print print_http_response(r)
 
         return task
 
@@ -327,13 +353,13 @@ class SafeZone2d(VideoAIUser):
         r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print print_http_response(r)
             raise Exception("safezone_2d request failed: {}". format(r.json()['message']))
 
         # while the task is not complete, lets keep checking it
         task = r.json()['task']
         if self.verbose:
-            print task
+            print print_http_response(r)
 
         return task
 
