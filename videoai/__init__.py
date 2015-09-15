@@ -75,12 +75,12 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
-    def tasks(self):
+    def tasks(self, page=1, number_per_page=50):
         '''
         Get a list of all tasks
         :return:
         '''
-        url = "{0}/{1}".format(self.base_url, self.end_point)
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
         print url
         r = requests.get(url, headers=self.header, allow_redirects=True)
         if self.verbose:
