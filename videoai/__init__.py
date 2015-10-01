@@ -44,6 +44,7 @@ class VideoAIUser(object):
         self.end_point = 'task'
 
     def wait(self, task):
+
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
 
         if task['complete']:
@@ -153,12 +154,12 @@ class AlarmVerification(VideoAIUser):
         files = {'video': open("{0}".format(video_file))}
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
+        if self.verbose:
+            print print_http_response(r)
+
         if r.json()['status'] != 'success':
             print print_http_response(r)
             raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
-
-        if self.verbose:
-            print print_http_response(r)
 
         return r.json()['task']
 
@@ -289,11 +290,11 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
+    def request(self, video_file, gender=0, recognition=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'gender': gender, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
+        data = {'gender': gender, 'recognition': recognition, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
@@ -312,9 +313,9 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
+    def apply(self, video_file, download=True, gender=0, recognition=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
 
-        task = self.request(video_file, gender=gender, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
+        task = self.request(video_file, gender=gender, recognition=recognition, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
 
         if not wait_until_finished:
             return task

@@ -11,6 +11,7 @@ class Recognition(VideoAIUser):
         self.subject = 'subject'
         self.watchlist = 'watchlist'
         self.description = 'description'
+        self.sighting = 'sighting'
         pass
 
     def create_subject(self, name, user_data):
@@ -18,7 +19,7 @@ class Recognition(VideoAIUser):
         Create a new subject
         :param name: a name to give the subject
         :param user_data: a dictionary of user data, this will get stored as JSON
-        :return:
+        :return: subject_id: The subject_id of the created subject
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
 
@@ -36,8 +37,7 @@ class Recognition(VideoAIUser):
             raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         subject = r.json()['data']['subject']
-        return subject
-
+        return subject['subject_id']
 
 
     def delete_subject(self, subject_id):
@@ -82,8 +82,20 @@ class Recognition(VideoAIUser):
     def enrol_from_image(self, subject_id, image_file, watchlist_id=''):
         pass
 
-    def add_from_sighting(self, subject_id, sighting_id, watchlist_id=''):
-        pass
+    def add_sighting_to_subject(self, sighting_id, subject_id, watchlist_id=''):
+
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
+        print url
+        r = requests.post(url, headers=self.header)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
+
+        return True
+
 
     def add_description(self, subject_id, description_id, watchlist_id=''):
         pass
