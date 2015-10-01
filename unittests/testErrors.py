@@ -5,7 +5,20 @@ import configparser
 import base64
 
 #HOST = 'http://localhost:5000'
-HOST = 'http://api2'
+HOST = 'https://api.videoai.net'
+
+def print_http_response(r):
+    '''
+    Print the http response
+    :param r: The response of a request
+    :return:
+    '''
+    print "HTTP/1.0 {} OK".format(r.status_code)
+    print "Content-Type: {}".format(r.headers['content-type'])
+    print "Content-Length: {}".format(r.headers['content-length'])
+    print "Server: {}".format(r.headers['server'])
+    print "Date: {}".format(r.headers['date'])
+    print r.text
 
 def get_key():
     home = os.path.expanduser("~")
@@ -39,6 +52,7 @@ class TestErrors(unittest.TestCase):
         """
         header = get_valid_header()
         r = requests.get(get_url(), headers=header)
+        print_http_response(r)
         self.assertEqual(r.status_code, 200)
 
     def test_invalid_key(self):
@@ -47,6 +61,7 @@ class TestErrors(unittest.TestCase):
         """
         header = get_header('absolutely', 'rubbish')
         r = requests.get(get_url(), headers=header)
+        print_http_response(r)
         self.assertEqual(r.status_code, 401)
 
     def test_invalid_key2(self):
@@ -56,6 +71,7 @@ class TestErrors(unittest.TestCase):
         api_id, api_secret = get_key()
         header = get_header(api_secret, api_id)
         r = requests.get(get_url(), headers=header)
+        print_http_response(r)
         self.assertEqual(r.status_code, 401)
 
     def test_invalid_key3(self):
@@ -65,6 +81,7 @@ class TestErrors(unittest.TestCase):
         api_id, api_secret = get_key()
         header = get_header(api_id, 'rubbish')
         r = requests.get(get_url(), headers=header)
+        print_http_response(r)
         self.assertEqual(r.status_code, 401)
 
     def test_invalid_endpoint(self):
@@ -73,6 +90,16 @@ class TestErrors(unittest.TestCase):
         """
         header = get_valid_header()
         r = requests.get(get_url('rubbish'), headers=header)
+        print_http_response(r)
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_endpoint2(self):
+        """
+        404 not found error
+        """
+        header = get_valid_header()
+        r = requests.get(get_url('\\%'), headers=header)
+        print_http_response(r)
         self.assertEqual(r.status_code, 404)
 
 

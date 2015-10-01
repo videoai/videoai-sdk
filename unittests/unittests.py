@@ -12,8 +12,8 @@ kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
 alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
 face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
-#host="http://api2"
-host="http://192.168.90.53:5000"
+host="https://api.videoai.net"
+
 
 class TestKamCheck(unittest.TestCase):
 
@@ -50,7 +50,7 @@ class TestAlarmVerification(unittest.TestCase):
         # Do the actual alarm verification
         def do_alarm_verification(self, video_file):
             video_path = os.path.join(alarm_verification_data_dir, video_file)
-            alarm_verification = AlarmVerification(host=host)
+            alarm_verification = AlarmVerification(host=host, verbose=True)
             task = alarm_verification.apply(video_file=video_path)
             print task
             return task
