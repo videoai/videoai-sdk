@@ -76,7 +76,22 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
-    def tasks(self, page=1, number_per_page=50):
+
+    def download_with_authentication(self, end_point, local_filename=''):
+        if not local_filename:
+            local_filename = end_point.split('/')[-1]
+        url = '{}{}'.format(self.base_url, end_point)
+        print 'Downloading {0} to {1}'.format(url, local_filename)
+        r = requests.get(url,  headers=self.header, stream=True)
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+        return local_filename
+
+
+    def tasks(self, page=1, number_per_page=3):
         '''
         Get a list of all tasks
         :return:
@@ -281,6 +296,58 @@ class FaceDetect(VideoAIUser):
             self.download_file(task['results_video'])
             self.download_file(task['results_xml'])
 
+        return task
+
+
+class FaceLogImage(VideoAIUser):
+
+    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
+        super(FaceLogImage, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
+        self.end_point = 'face_log_image'
+
+    def request(self, image_file, gender=0, recognition=0, min_size=30, min_certainty=1):
+
+        file_size = os.path.getsize(image_file)/1000000.0
+        print 'Requested FaceLogImage on {0} ({1} Mb)'.format(image_file, file_size)
+
+        data = {'gender': gender, 'recognition': recognition, 'min_size': min_size, 'min_certainty': min_certainty}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        files = {'image': open("{0}".format(image_file))}
+
+        try:
+            r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+        except:
+            return
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("Face Log request failed: {}". format(r.json()['message']))
+
+        # while the task is not complete, lets keep checking it
+        task = r.json()['task']
+        if self.verbose:
+            print print_http_response(r)
+
+        return task
+
+    def apply(self, image_file, download=True, gender=0, recognition=0, min_size=30, min_certainty=1, wait_until_finished=True):
+
+        task = self.request(image_file, gender=gender, recognition=recognition, min_size=min_size, min_certainty=min_certainty)
+
+        if not wait_until_finished:
+            return task
+
+        task = self.wait(task)
+
+        if not task['success']:
+            print 'Failed FaceLogImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['results_image'])
+            self.download_file(task['results_xml'])
         return task
 
 

@@ -1,5 +1,5 @@
 from twisted.conch.test.test_transport import factory
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
+from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, FaceLogImage, SafeZone2d
 
 import unittest
 import base64
@@ -12,8 +12,9 @@ kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
 alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
 face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
-#host="http://api2"
-host="http://192.168.90.53:5000"
+host="http://m3"
+#host="http://192.168.90.53:5000"
+
 
 class TestKamCheck(unittest.TestCase):
 
@@ -165,6 +166,30 @@ class TestFaceLog(unittest.TestCase):
                 if this_test.max_frames == 0:
                     this_test.max_frames = this_test.frames
                 self.assertEqual(task['frames_processed'], this_test.max_frames)
+
+
+class TestFaceLogImage(unittest.TestCase):
+
+        # Do the actual alarm verification
+        def do_face_log(self, image_file):
+
+            face_log_image = FaceLogImage(host=host, verbose=True)
+            image_path = os.path.join(face_detect_data_dir, image_file)
+            task = face_log_image.apply(image_path)
+            return task
+
+        # Test on some known videos
+        def test_face_log(self):
+            print "Testing face detection..."
+
+            test_data = { 'group.jpg':16 }
+
+            for key, value in test_data.iteritems():
+                print "** Testing {0} with expected result {1} **".format(key, value)
+                task = self.do_face_log(key)
+                self.assert_(task['analytic'], "face_log_image")
+                self.assertTrue(task['complete'])
+                self.assertEqual(task['number_of_faces'], value)
 
 
 class TestSafeZone2d(unittest.TestCase):

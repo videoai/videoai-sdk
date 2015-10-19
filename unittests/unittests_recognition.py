@@ -54,7 +54,7 @@ class TestEnrolSubjects(unittest.TestCase):
             self.assertTrue(task['success'])
             sightings = task['sightings']
             self.assertEqual(1, len(sightings))
-            subject_id = self.recognition.create_subject(name=name, user_data='')
+            subject_id = self.recognition.create_subject(name=name)
             sighting_list[subject_id] = sightings[0]['sighting_id']
             print '{} {} {}'.format(subject_id, name, sightings[0]['sighting_id'])
 
@@ -110,7 +110,8 @@ class TestSubject(unittest.TestCase):
             self.assertIsNotNone(subjects)
 
             for subject in subjects:
-                print '{0} has id {1}'.format(subject['name'], subject['subject_id'])
+                print '{0} has id {1} and thumbnail {2}'.format(subject['name'], subject['subject_id'], subject['thumbnail'])
+                self.recognition.download_with_authentication(subject['thumbnail'], '{}.jpg'.format(subject['subject_id']))
 
         def delete_subjects(self):
             subjects = self.recognition.list_subjects()
@@ -120,7 +121,7 @@ class TestSubject(unittest.TestCase):
                 self.assertEqual(subject['subject_id'], deleted_id)
 
 
-class TestWatchlist(unittest.TestCase):
+class TestTag(unittest.TestCase):
 
         class TestData:
             def __init__(self, name):
@@ -130,38 +131,37 @@ class TestWatchlist(unittest.TestCase):
         def setUp(self):
             self.recognition = Recognition()
 
-        def create_watchlists(self):
+        def create_tags(self):
             print "Creating some watchlists"
 
             test_data = [
-                        TestWatchlist.TestData(name='Blacklist'),
-                        TestWatchlist.TestData(name='Whitelist'),
-                        TestWatchlist.TestData(name='Office')
+                        TestTag.TestData(name='Blacklist'),
+                        TestTag.TestData(name='Whitelist'),
+                        TestTag.TestData(name='Office')
             ]
 
             for this_test in test_data:
                 print "** Testing {0} **".format(this_test.name)
-                watchlist = self.recognition.create_watchlist(name=this_test.name)
-                print 'created watchlist {name} {watchlist_id}'.format(name=watchlist['name'], watchlist_id=watchlist['watchlist_id'])
-                self.assertIsNotNone(watchlist['watchlist_id'])
+                tag = self.recognition.create_tag(name=this_test.name)
+                print 'created tag {name} {tag_id}'.format(name=tag['name'], tag_id=tag['watchlist_id'])
+                self.assertIsNotNone(tag['tag_id'])
 
-        def list_watchlists(self):
+        def list_tags(self):
             print "List all the watchlists"
 
-            watchlists = self.recognition.list_watchlists()
+            tags = self.recognition.list_tags()
 
-            self.assertIsNotNone(watchlists)
+            self.assertIsNotNone(tags)
 
-            for watchlist in watchlists:
-                print '{0} has id {1}'.format(watchlist['name'], watchlist['watchlist_id'])
+            for tag in tags:
+                print '{0} has id {1}'.format(tag['name'], tag['tag_id'])
 
-        def delete_watchlists(self):
-            watchlists = self.recognition.list_watchlists()
-            for watchlist in watchlists:
-                print 'Going to delete {0}'.format(watchlist['watchlist_id'])
-                deleted_id = self.recognition.delete_watchlist(watchlist['watchlist_id'])
-                self.assertEqual(watchlist['watchlist_id'], deleted_id)
-
+        def delete_tags(self):
+            tags = self.recognition.list_tags()
+            for tag in tags:
+                print 'Going to delete {0}'.format(tag['tag_id'])
+                deleted_id = self.recognition.delete_tag(tag['tag_id'])
+                self.assertEqual(tag['tag_id'], deleted_id)
 
 
 if __name__ == '__main__':

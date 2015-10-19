@@ -1,4 +1,4 @@
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
+from videoai import VideoAIUser, KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
 import argparse
 
 
@@ -50,7 +50,7 @@ if args.kamcheck:
     else:
         task = kamcheck.apply(image_file=args.image, video_file=args.video)
 
-if args.alarm_verification:
+elif args.alarm_verification:
     print "performing alarm verification"
     alarm_verification = AlarmVerification(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -58,7 +58,7 @@ if args.alarm_verification:
     else:
         tasks = alarm_verification.apply(video_file=args.video, download=args.download)
 
-if args.face_detect:
+elif args.face_detect:
     print "performing face detection"
     face_detect = FaceDetect(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -71,7 +71,7 @@ if args.face_detect:
                                  max_frames=args.max_frames,
                                  min_size=args.min_size)
 
-if args.face_detect_image:
+elif args.face_detect_image:
     print "performing face detection on image"
     face_detect_image = FaceDetectImage(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -82,7 +82,7 @@ if args.face_detect_image:
                                        blur=args.blur,
                                        min_size=args.min_size)
 
-if args.face_log:
+elif args.face_log:
     print "performing face log"
     face_log = FaceLog(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -97,7 +97,7 @@ if args.face_log:
                               min_size=args.min_size,
                               min_certainty=args.min_certainty)
 
-if args.safezone_2d:
+elif args.safezone_2d:
     print "performing safezone_2d"
     safezone_2d = SafeZone2d(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -109,4 +109,8 @@ if args.safezone_2d:
                                  download=args.download)
 
 
-
+else :
+    print "listing tasks"
+    videoai = VideoAIUser(host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        videoai.tasks()
