@@ -6,26 +6,48 @@ import requests
 
 class Recognition(VideoAIUser):
 
-    def __init__(self, key_file='', verbose=True):
-        super(Recognition, self).__init__(key_file=key_file, verbose=verbose)
+    def __init__(self, host='', key_file = '', api_id='', api_secret='', verbose=False):
+        super(Recognition, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.subject = 'subject'
-        self.watchlist = 'watchlist'
+        self.tag = 'tag'
         self.description = 'description'
+        self.detection = 'detection'
+        self.sighting = 'sighting'
         pass
 
-    def create_subject(self, name, user_data):
+    def subject_thumbnail(self, subject_id):
+        url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def description_thumbnail(self, description_id):
+        url = '{}/{}/{}'.format(self.base_url, 'thumbnail/description', description_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def detection_thumbnail(self, detection_id):
+        url = '{}/{}/{}'.format(self.base_url, 'thumbnail/detection', detection_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def sighting_thumbnail(self, sighting_id):
+        url = '{}/{}/{}'.format(self.base_url, 'thumbnail/sighting', sighting_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def create_subject(self, name, user_data={}):
         """
         Create a new subject
         :param name: a name to give the subject
         :param user_data: a dictionary of user data, this will get stored as JSON
-        :return:
+        :return: subject_id: The subject_id of the created subject
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
 
         json_user_data = json.dumps(user_data)
         print json_user_data
 
-        data = { 'name': name }
+        data = { 'name': name, 'user_data': json_user_data }
 
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
         print r.text
@@ -38,6 +60,28 @@ class Recognition(VideoAIUser):
         subject = r.json()['data']['subject']
         return subject
 
+
+    def get_subject(self, subject_id):
+        """
+        Get a subject
+        """
+        url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
+        print 'URL {}'.format(url)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print 'now here'
+            print r.text
+            raise Exception("Get subject failed: {}". format(r.json()['message']))
+
+        try:
+            s = r.json()['data']['subject']
+        except:
+            raise Exception("Failed to decode JSON")
+        return s
 
 
     def delete_subject(self, subject_id):
@@ -59,10 +103,10 @@ class Recognition(VideoAIUser):
         return subject_id
 
 
-    def list_subjects(self, watchlist_id=''):
+    def list_subjects(self, tag_id=''):
         """
         List all the subjects
-        :param watchlist_id: If specified then filter by this watchlist
+        :param tag_id: If specified then filter by this tag
         :return:
         """
 
@@ -79,20 +123,57 @@ class Recognition(VideoAIUser):
         subjects = r.json()['data']['subjects']
         return subjects
 
-    def enrol_from_image(self, subject_id, image_file, watchlist_id=''):
+    def enrol_from_image(self, subject_id, image_file):
         pass
 
-    def add_from_sighting(self, subject_id, sighting_id, watchlist_id=''):
+    def add_sighting_to_subject(self, sighting_id, subject_id):
+
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
+        print url
+        r = requests.post(url, headers=self.header)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
+
+        return True
+
+    def add_detection_to_subject(self, detection_id, subject_id):
+
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.detection, detection_id, subject_id)
+        print "URL {}".format(url)
+        r = requests.post(url, headers=self.header)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Add detection to subject failed: {}". format(r.json()['message']))
+
+        return True
+
+
+    def add_description(self, subject_id, description_id):
         pass
 
-    def add_description(self, subject_id, description_id, watchlist_id=''):
-        pass
 
     def delete_description(self, description_id):
-        pass
+        url = "{0}/{1}/{2}".format(self.base_url, self.description, description_id)
+        print url
+        r = requests.delete(url, headers=self.header)
+        print r.text
+        print r.status_code
 
-    def create_watchlist(self, name):
-        url = "{0}/{1}".format(self.base_url, self.watchlist)
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Failed to delete description: {}". format(r.json()['message']))
+
+        return True
+
+    def create_tag(self, name):
+        url = "{0}/{1}".format(self.base_url, self.tag)
 
         data = { 'name': name }
 
@@ -102,14 +183,14 @@ class Recognition(VideoAIUser):
 
         if r.json()['status'] != 'success':
             print r.text
-            raise Exception("Create watchlist failed: {}". format(r.json()['message']))
+            raise Exception("Create tag failed: {}". format(r.json()['message']))
 
-        watchlist = r.json()['data']['watchlist']
-        return watchlist
+        tag = r.json()['data']['tag']
+        return tag
 
-    def delete_watchlist(self, watchlist_id):
+    def delete_tag(self, tag_id):
 
-        url = "{0}/{1}/{2}".format(self.base_url, self.watchlist, watchlist_id)
+        url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_id)
 
         r = requests.delete(url, headers=self.header)
         print r.text
@@ -117,12 +198,12 @@ class Recognition(VideoAIUser):
 
         if r.json()['status'] != 'success':
             print r.text
-            raise Exception("Delete watchlist failed: {}". format(r.json()['message']))
+            raise Exception("Delete tag failed: {}". format(r.json()['message']))
 
-        return watchlist_id
+        return tag_id
 
-    def list_watchlists(self):
-        url = "{0}/{1}".format(self.base_url, self.watchlist)
+    def list_tags(self):
+        url = "{0}/{1}".format(self.base_url, self.tag)
 
         r = requests.get(url, headers=self.header)
         print r.text
@@ -132,7 +213,7 @@ class Recognition(VideoAIUser):
             print r.text
             raise Exception("Create subject failed: {}". format(r.json()['message']))
 
-        return r.json()['data']['watchlists']
+        return r.json()['data']['tags']
 
-    def set_default_watchlist(self, watchlist_id):
+    def set_default_tag(self, tag_id):
         pass

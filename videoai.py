@@ -1,4 +1,4 @@
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
+from videoai import VideoAIUser, KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
 import argparse
 
 
@@ -23,6 +23,7 @@ parser.add_argument('-v', '--video', dest='video', help='specify a video to use'
 parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--kamcheck', dest='kamcheck', action='store_true', help='Perform kamcheck on image and video')
+parser.add_argument('--kamcheck-reference', dest='kamcheck_reference', action='store_true', help='Select reference image from video')
 parser.add_argument('--alarm-verification', dest='alarm_verification', action='store_true', help='Perform alarm verification on video')
 parser.add_argument('--face-detect', dest='face_detect', action='store_true', help='Perform FaceDetect on video')
 parser.add_argument('--face-detect-image', dest='face_detect_image', action='store_true', help='Perform FaceDetect on image')
@@ -32,6 +33,7 @@ parser.add_argument('--download', dest='download', action='store_true', help='Do
 parser.add_argument('--no-download', dest='download', action='store_false', help='Do not download any results')
 parser.add_argument('--blur', dest='blur', type=zero_or_one, default=0, help='If doing some face-detection, blur the faces in the output media')
 parser.add_argument('--gender', dest='gender', action='store_true', help='If doing face-log, detect the gender of the faces')
+parser.add_argument('--recognition', dest='recognition', action='store_true', help='If doing face-log, perform recognition from default watchlist')
 parser.add_argument('--start-frame', dest='start_frame', default=0, help='Start processing at this frame in the video')
 parser.add_argument('--min-certainty', dest='min_certainty', default=1.0, help='Minimum certainty to keep when doing face-log')
 parser.add_argument('--max-frames', dest='max_frames', default=0, help='Process this many frames (0 do all)')
@@ -49,7 +51,15 @@ if args.kamcheck:
     else:
         task = kamcheck.apply(image_file=args.image, video_file=args.video)
 
-if args.alarm_verification:
+elif args.kamcheck_reference:
+    print "performing kamcheck get reference image"
+    kamcheck = KamCheck(host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        kamcheck.tasks()
+    else:
+        task = kamcheck.get_reference_image(video_file=args.video)
+
+elif args.alarm_verification:
     print "performing alarm verification"
     alarm_verification = AlarmVerification(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -57,7 +67,7 @@ if args.alarm_verification:
     else:
         tasks = alarm_verification.apply(video_file=args.video, download=args.download)
 
-if args.face_detect:
+elif args.face_detect:
     print "performing face detection"
     face_detect = FaceDetect(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -70,7 +80,7 @@ if args.face_detect:
                                  max_frames=args.max_frames,
                                  min_size=args.min_size)
 
-if args.face_detect_image:
+elif args.face_detect_image:
     print "performing face detection on image"
     face_detect_image = FaceDetectImage(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -81,7 +91,7 @@ if args.face_detect_image:
                                        blur=args.blur,
                                        min_size=args.min_size)
 
-if args.face_log:
+elif args.face_log:
     print "performing face log"
     face_log = FaceLog(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -90,12 +100,13 @@ if args.face_log:
         task = face_log.apply(video_file=args.video,
                               download=args.download,
                               gender=args.gender,
+                              recognition=args.recognition,
                               start_frame=args.start_frame,
                               max_frames=args.max_frames,
                               min_size=args.min_size,
                               min_certainty=args.min_certainty)
 
-if args.safezone_2d:
+elif args.safezone_2d:
     print "performing safezone_2d"
     safezone_2d = SafeZone2d(host=args.host, key_file=args.key_file, verbose=args.verbose)
     if args.tasks:
@@ -107,4 +118,8 @@ if args.safezone_2d:
                                  download=args.download)
 
 
-
+else :
+    print "listing tasks"
+    videoai = VideoAIUser(host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        videoai.tasks()

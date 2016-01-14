@@ -38,12 +38,14 @@ class VideoAIUser(object):
         if host:
             self.base_url = host
         else:
-            self.base_url = "http://192.168.90.53:5000"
-            #self.base_url = "https://api.videoai.net"
+            #self.base_url = "http://192.168.90.56:5000"
+            #self.base_url = "https://api.videoai.net"a
+            self.base_url = "http://localhost:5000"
         self.verbose = verbose
         self.end_point = 'task'
 
     def wait(self, task):
+
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
 
         if task['complete']:
@@ -75,7 +77,22 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
-    def tasks(self, page=1, number_per_page=50):
+
+    def download_with_authentication(self, end_point, local_filename=''):
+        if not local_filename:
+            local_filename = end_point.split('/')[-1]
+        url = '{}{}'.format(self.base_url, end_point)
+        print 'Downloading {0} to {1}'.format(url, local_filename)
+        r = requests.get(url,  headers=self.header, stream=True)
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+        return local_filename
+
+
+    def tasks(self, page=1, number_per_page=3):
         '''
         Get a list of all tasks
         :return:
@@ -137,6 +154,41 @@ class KamCheck(VideoAIUser):
         else:
             print 'Reference {0}, video {1}, probability of tampering {2}%'.format(image_file, video_file, task['probability'])
         return task
+    
+    def request_get_reference_image(self, video_file):
+
+        video_file_size = os.path.getsize(video_file)/1000000.0
+        print 'Requested KamCheckGetReference on video {0} ({1} Mb)'.format(video_file, video_file_size)
+        url = "{0}/{1}_get_reference".format(self.base_url, self.end_point)
+        files = {
+                 'video': open("{0}".format(video_file))
+        }
+        r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("KamCheck GetReference Image request failed: {}". format(r.json()['message']))
+
+        if self.verbose:
+            print print_http_response(r)
+
+        return r.json()['task']
+
+    def get_reference_image(self, video_file, download=True, wait_until_finished=True):
+        task = self.request_get_reference_image(video_file)
+
+        if not wait_until_finished:
+            return task
+
+        task = self.wait(task)
+        if not task['success']:
+            print 'Failed Kamcheck: {0}'.format(task['message'])
+        else:
+            print 'Video {0}, Frame {1} Reference Image {2}'.format(video_file, task['frame_number'], task['reference_image'])
+        if download:
+            self.download_file(task['reference_image'])
+        return task
+        
 
 
 class AlarmVerification(VideoAIUser):
@@ -153,12 +205,12 @@ class AlarmVerification(VideoAIUser):
         files = {'video': open("{0}".format(video_file))}
         r = requests.post(url, headers=self.header, files=files,  allow_redirects=True)
 
+        if self.verbose:
+            print print_http_response(r)
+
         if r.json()['status'] != 'success':
             print print_http_response(r)
             raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
-
-        if self.verbose:
-            print print_http_response(r)
 
         return r.json()['task']
 
@@ -283,17 +335,75 @@ class FaceDetect(VideoAIUser):
         return task
 
 
+class FaceLogImage(VideoAIUser):
+
+    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
+        super(FaceLogImage, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
+        self.end_point = 'face_log_image'
+
+    def request(self, image_file, gender=0, recognition=0, min_size=30, min_certainty=1):
+
+        file_size = os.path.getsize(image_file)/1000000.0
+        print 'Requested FaceLogImage on {0} ({1} Mb)'.format(image_file, file_size)
+
+        data = {'gender': gender, 'recognition': recognition, 'min_size': min_size, 'min_certainty': min_certainty}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        files = {'image': open("{0}".format(image_file))}
+
+        try:
+            r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+        except:
+            return
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("Face Log request failed: {}". format(r.json()['message']))
+
+        # while the task is not complete, lets keep checking it
+        task = r.json()['task']
+        if self.verbose:
+            print print_http_response(r)
+
+        return task
+
+    def apply(self, image_file, download=True, gender=0, recognition=0, min_size=30, min_certainty=1, wait_until_finished=True):
+
+        task = self.request(image_file, gender=gender, recognition=recognition, min_size=min_size, min_certainty=min_certainty)
+
+        if not wait_until_finished:
+            return task
+
+        task = self.wait(task)
+
+        if not task['success']:
+            print 'Failed FaceLogImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['results_image'])
+            self.download_file(task['results_xml'])
+        return task
+
+
 class FaceLog(VideoAIUser):
 
     def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
         super(FaceLog, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1):
+    def request(self, video_file, gender=0, recognition=0, threshold=-1.0, start_frame=0, max_frames=0, min_size=30, min_certainty=0.75):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'gender': gender, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size, 'min_certainty': min_certainty}
+        data = {'gender': gender, 
+                'recognition': recognition,
+                'compare_threshold': threshold,
+                'start_frame': start_frame, 
+                'max_frames': max_frames, 
+                'min_size': min_size, 
+                'min_certainty': min_certainty}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
@@ -312,9 +422,9 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, gender=0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
+    def apply(self, video_file, download=True, gender=0, recognition=0, threshold=-1.0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
 
-        task = self.request(video_file, gender=gender, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
+        task = self.request(video_file, gender=gender, recognition=recognition, threshold=threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
 
         if not wait_until_finished:
             return task
