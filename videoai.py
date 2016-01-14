@@ -23,6 +23,7 @@ parser.add_argument('-v', '--video', dest='video', help='specify a video to use'
 parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--kamcheck', dest='kamcheck', action='store_true', help='Perform kamcheck on image and video')
+parser.add_argument('--kamcheck-reference', dest='kamcheck_reference', action='store_true', help='Select reference image from video')
 parser.add_argument('--alarm-verification', dest='alarm_verification', action='store_true', help='Perform alarm verification on video')
 parser.add_argument('--face-detect', dest='face_detect', action='store_true', help='Perform FaceDetect on video')
 parser.add_argument('--face-detect-image', dest='face_detect_image', action='store_true', help='Perform FaceDetect on image')
@@ -49,6 +50,14 @@ if args.kamcheck:
         kamcheck.tasks()
     else:
         task = kamcheck.apply(image_file=args.image, video_file=args.video)
+
+elif args.kamcheck_reference:
+    print "performing kamcheck get reference image"
+    kamcheck = KamCheck(host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        kamcheck.tasks()
+    else:
+        task = kamcheck.get_reference_image(video_file=args.video)
 
 elif args.alarm_verification:
     print "performing alarm verification"
