@@ -52,8 +52,11 @@ class VideoAIUser(object):
             return task
 
         while not task['complete']:
-            time.sleep(0.5)
+            time.sleep(1.0)
             r = requests.get(url, headers=self.header, allow_redirects=True)
+            print url
+            print r.json()
+
             if r.json()['status'] != 'success':
                 raise Exception("Polling failed: {}". format(r.json()['message']))
             task = r.json()['task']
@@ -126,6 +129,7 @@ class KamCheck(VideoAIUser):
 
         image_file_size = os.path.getsize(image_file)/1000000.0
         video_file_size = os.path.getsize(video_file)/1000000.0
+        self.end_point = 'kamcheck'
         print 'Requested KamCheck on image {0} ({1} Mb) and video {2} ({3} Mb)'.format(image_file, image_file_size, video_file, video_file_size)
         url = "{0}/{1}".format(self.base_url, self.end_point)
         files = {'image': open("{0}".format(image_file)),
@@ -158,8 +162,9 @@ class KamCheck(VideoAIUser):
     def request_get_reference_image(self, video_file):
 
         video_file_size = os.path.getsize(video_file)/1000000.0
+        self.end_point = 'kamcheck_get_reference'
         print 'Requested KamCheckGetReference on video {0} ({1} Mb)'.format(video_file, video_file_size)
-        url = "{0}/{1}_get_reference".format(self.base_url, self.end_point)
+        url = "{0}/{1}".format(self.base_url, self.end_point)
         files = {
                  'video': open("{0}".format(video_file))
         }
