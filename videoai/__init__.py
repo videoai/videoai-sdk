@@ -52,10 +52,8 @@ class VideoAIUser(object):
             return task
 
         while not task['complete']:
-            time.sleep(1.0)
+            time.sleep(0.5)
             r = requests.get(url, headers=self.header, allow_redirects=True)
-            print url
-            print r.json()
 
             if r.json()['status'] != 'success':
                 raise Exception("Polling failed: {}". format(r.json()['message']))
