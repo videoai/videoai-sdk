@@ -39,8 +39,8 @@ class VideoAIUser(object):
             self.base_url = host
         else:
             #self.base_url = "http://192.168.90.56:5000"
-            #self.base_url = "https://api.videoai.net"a
-            self.base_url = "http://localhost:5000"
+            self.base_url = "https://api.videoai.net"
+            #self.base_url = "http://localhost:5000"
         self.verbose = verbose
         self.end_point = 'task'
 
@@ -112,7 +112,8 @@ class VideoAIUser(object):
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
-        if self.verbose:
+        
+	if self.verbose:
             print_http_response(r)
         return r.json()
 
