@@ -36,6 +36,8 @@ basic_auth_header = "Basic {0}".format(base64.b64encode(api_key))
 
 There is a simple command line tool you can use to test most of VideoAI's current functionality.
 
+The tool has a dependency on configparser: you can install this with "pip install configparser".
+
 ```
 python videoai.py --help
 
