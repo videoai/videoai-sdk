@@ -7,7 +7,7 @@ To see a demo-portal for VideoAI, built using this SDK and the VideoAI API, poin
 
 Documentation on the actual VideoAI REST API can be found at https://videoai.net/api.
 
-## Authentication
+## SDK Authentication
 
 To use VideoAI you will need a pair of developer keys.  You can request these through the demo web-site.
 
@@ -20,6 +20,17 @@ apiKey_secret = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 The main Python videoai class will then pick them up and use them to authenticate against the VideoAI service.
+
+## Basic HTTP Authentication
+
+To generate a token from your key-pair to put into the Authorization field of the HTTP header, or to use on with a tool like curl.
+
+```
+import base64
+api_key = "{0}:{1}".format(apiKey_id, apiKey_secret)
+basic_auth_header = "Basic {0}".format(base64.b64encode(api_key))
+```
+
 
 ## The Command Line Tool
 
