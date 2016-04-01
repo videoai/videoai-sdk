@@ -39,8 +39,8 @@ class VideoAIUser(object):
             self.base_url = host
         else:
             #self.base_url = "http://192.168.90.56:5000"
-            self.base_url = "https://api.videoai.net"
-            #self.base_url = "http://localhost:5000"
+            #self.base_url = "https://api.videoai.net"
+            self.base_url = "http://192.168.90.53:5000"
         self.verbose = verbose
         self.end_point = 'task'
 
@@ -192,7 +192,6 @@ class KamCheck(VideoAIUser):
         if download:
             self.download_file(task['reference_image'])
         return task
-        
 
 
 class AlarmVerification(VideoAIUser):
@@ -235,6 +234,53 @@ class AlarmVerification(VideoAIUser):
             return task
 
         print 'AlarmVerification probability of alarm {}%'.format(task['probability'])
+        if download:
+            self.download_file(task['results_video'])
+        return task
+
+
+class Enhance(VideoAIUser):
+
+    def __init__(self, algorithm='stabilisation', host='', key_file='', api_id='', api_secret='', verbose=False):
+        super(Enhance, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
+        self.algorithm = algorithm
+        self.end_point = 'enhance'
+
+    def request(self, video_file):
+        file_size = os.path.getsize(video_file)/1000000.0
+        print 'Requested stabilisation on file {0} ({1} Mb)'.format(video_file, file_size)
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        files = {'video': open("{0}".format(video_file))}
+        data = {'algorithm': self.algorithm }
+        r = requests.post(url, headers=self.header, data=data, files=files,  allow_redirects=True)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("Stabilisation request failed: {}". format(r.json()['message']))
+
+        return r.json()['task']
+
+    def apply(self, video_file, download=True, wait_until_finished=True):
+
+        # do initial request
+        task = self.request(video_file)
+
+        if not wait_until_finished:
+            return task
+
+        # keep checking until it is done
+        task = self.wait(task)
+
+        # has the task been successful?
+        if not task['success']:
+            print 'Failed Enhance: {0}'.format(task['message'])
+            return task
+
+        print task['message']
         if download:
             self.download_file(task['results_video'])
         return task
@@ -397,7 +443,7 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, gender=0, recognition=0, threshold=-1.0, start_frame=0, max_frames=0, min_size=30, min_certainty=0.75):
+    def request(self, video_file, gender=0, recognition=0, threshold=0.8, start_frame=0, max_frames=0, min_size=30, min_certainty=0.75):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
@@ -426,7 +472,7 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, gender=0, recognition=0, threshold=-1.0, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
+    def apply(self, video_file, download=True, gender=0, recognition=0, threshold=0.8, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
 
         task = self.request(video_file, gender=gender, recognition=recognition, threshold=threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
 
