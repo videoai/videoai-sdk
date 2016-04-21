@@ -246,13 +246,13 @@ class Enhance(VideoAIUser):
         self.algorithm = algorithm
         self.end_point = 'enhance'
 
-    def request(self, video_file):
+    def request(self, video_file, max_frames):
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested stabilisation on file {0} ({1} Mb)'.format(video_file, file_size)
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
         files = {'video': open("{0}".format(video_file))}
-        data = {'algorithm': self.algorithm }
+        data = {'algorithm': self.algorithm, 'max_frames':max_frames }
         r = requests.post(url, headers=self.header, data=data, files=files,  allow_redirects=True)
 
         if self.verbose:
@@ -264,10 +264,10 @@ class Enhance(VideoAIUser):
 
         return r.json()['task']
 
-    def apply(self, video_file, download=True, wait_until_finished=True):
+    def apply(self, video_file, download=True, wait_until_finished=True, max_frames=0):
 
         # do initial request
-        task = self.request(video_file)
+        task = self.request(video_file, max_frames)
 
         if not wait_until_finished:
             return task
@@ -391,12 +391,12 @@ class FaceLogImage(VideoAIUser):
         super(FaceLogImage, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log_image'
 
-    def request(self, image_file, gender=0, recognition=0, min_size=30, min_certainty=1):
+    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.75):
 
         file_size = os.path.getsize(image_file)/1000000.0
         print 'Requested FaceLogImage on {0} ({1} Mb)'.format(image_file, file_size)
 
-        data = {'gender': gender, 'recognition': recognition, 'min_size': min_size, 'min_certainty': min_certainty}
+        data = {'min_size': min_size, 'recognition': recognition, 'compare_threshold': compare_threshold}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
@@ -418,9 +418,9 @@ class FaceLogImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, gender=0, recognition=0, min_size=30, min_certainty=1, wait_until_finished=True):
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.75, wait_until_finished=True):
 
-        task = self.request(image_file, gender=gender, recognition=recognition, min_size=min_size, min_certainty=min_certainty)
+        task = self.request(image_file, min_size=min_size, recognition=recognition, compare_threshold=compare_threshold)
 
         if not wait_until_finished:
             return task
@@ -443,17 +443,17 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, gender=0, recognition=0, threshold=0.8, start_frame=0, max_frames=0, min_size=30, min_certainty=0.75):
+    def request(self, video_file, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.75):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'gender': gender, 
-                'recognition': recognition,
-                'compare_threshold': threshold,
+        data = { 
                 'start_frame': start_frame, 
                 'max_frames': max_frames, 
+                'recognition': recognition,
+                'compare_threshold': compare_threshold,
                 'min_size': min_size, 
-                'min_certainty': min_certainty}
+                }
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
@@ -472,9 +472,9 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, gender=0, recognition=0, threshold=0.8, start_frame=0, max_frames=0, min_size=30, min_certainty=1.0, wait_until_finished=True):
+    def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.75, wait_until_finished=True):
 
-        task = self.request(video_file, gender=gender, recognition=recognition, threshold=threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size, min_certainty=min_certainty)
+        task = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size)
 
         if not wait_until_finished:
             return task

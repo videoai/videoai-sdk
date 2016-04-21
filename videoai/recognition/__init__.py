@@ -35,6 +35,21 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, allow_redirects=True)
         return r.content
 
+    def sighting_acknowledge(self, sighting_id):
+        url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def sighting_true(self, sighting_id):
+        url = '{}/sighting/{}/true'.format(self.base_url, sighting_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
+    def sighting_error(self, sighting_id):
+        url = '{}/sighting/{}/error'.format(self.base_url, sighting_id)
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        return r.content
+
     def create_subject(self, name, user_data={}):
         """
         Create a new subject
@@ -154,6 +169,22 @@ class Recognition(VideoAIUser):
 
         return True
 
+    def list_sightings(self, page=1, number_per_page=1000):
+        """
+        Get sightings
+        :return:
+        """
+
+        url = "{0}/{1}".format(self.base_url, self.sighting)
+
+        r = requests.get(url, headers=self.header)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("List sightings: {}". format(r.json()['message']))
+
+        subjects = r.json()['sightings']
+        return subjects
 
     def add_description(self, subject_id, description_id):
         pass

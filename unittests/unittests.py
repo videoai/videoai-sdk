@@ -1,5 +1,5 @@
 from twisted.conch.test.test_transport import factory
-from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, FaceLogImage, SafeZone2d
+from videoai import KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, FaceLogImage, SafeZone2d, Enhance 
 
 import unittest
 import base64
@@ -11,8 +11,11 @@ import time
 kamcheck_data_dir = os.path.join('../..', 'test-data', 'KamCheck')
 alarm_verification_data_dir = os.path.join('../..', 'test-data', 'AlarmVerification')
 face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
+face_recognition_data_dir = os.path.join('../..', 'test-data', 'FaceRecognition')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
-host="https://api.videoai.net"
+enhance_data_dir = os.path.join('../..', 'test-data', 'Enhance')
+#host="https://api.videoai.net"
+host = "http://localhost:5000"
 
 class TestKamCheck(unittest.TestCase):
 
@@ -35,14 +38,26 @@ class TestKamCheck(unittest.TestCase):
             self.assertTrue(task['complete'])
             self.assertEqual(task['probability'], 0)
         
-            task = self.do_kam_check('PTZRef.png', 'PTZ.avi')
+            task = self.do_kam_check('kamcheck01.jpg', 'kamcheck01.avi')
             self.assert_(task['analytic'], "kamcheck")        
             self.assertTrue(task['complete'])
-            self.assertEqual(task['probability'], 100)
+            self.assertEqual(task['probability'], 0)
 
+            task = self.do_kam_check('kamcheck02.jpg', 'kamcheck02.avi')
+            self.assert_(task['analytic'], "kamcheck")        
+            self.assertTrue(task['complete'])
+            self.assertEqual(task['probability'], 0)
+            
+            task = self.do_kam_check('kamcheck03.jpg', 'kamcheck03.avi')
+            self.assert_(task['analytic'], "kamcheck")        
+            self.assertTrue(task['complete'])
+            self.assertEqual(task['probability'], 0)
+            
+            
             # what happens when someone gets them muddled up
             with self.assertRaises(Exception):
-                task = self.do_kam_check('PTZ.avi', 'PTZRef.png')
+                task = self.do_kam_check('kamcheck01.avi', 'kamcheck01.jpg')
+
 
 class TestAlarmVerification(unittest.TestCase):
 
@@ -131,28 +146,28 @@ class TestFaceDetect(unittest.TestCase):
 class TestFaceLog(unittest.TestCase):
 
         class TestData:
-            def __init__(self, video_file, frames, max_frames, number_of_sightings, min_certainty=1):
+            def __init__(self, video_file, frames, max_frames, number_of_sightings, min_size=80):
                 self.video_file = video_file
                 self.frames = frames
                 self.max_frames = max_frames
+                self.min_size = min_size
                 self.number_of_sightings = number_of_sightings
-                self.min_certainty = min_certainty
                 self.verbose = True
 
         # Do the actual alarm verification
         def do_face_log(self, test_data):
-            video_path = os.path.join(face_detect_data_dir, test_data.video_file)
+            video_path = os.path.join(face_recognition_data_dir, test_data.video_file)
             face_log = FaceLog(host=host, verbose=True)
-            task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames, min_certainty=test_data.min_certainty)
+            task = face_log.apply(video_file=video_path, max_frames=test_data.max_frames, min_size=test_data.min_size)
             return task
 
         # Test on some known videos
         def test_face_log(self):
-            print "Testing face detection..."
+            print "Testing face log..."
 
             test_data = [
-                        TestFaceLog.TestData(video_file='officeEntry.mp4', frames=81, max_frames=0, number_of_sightings=1, min_certainty=0),
-                        TestFaceLog.TestData(video_file='officeEntry.mp4', frames=81, max_frames=20, number_of_sightings=0)
+                        TestFaceLog.TestData(video_file='busy_office.mkv', frames=103, max_frames=0, number_of_sightings=3, min_size=40),
+                        TestFaceLog.TestData(video_file='kieron01.mkv', frames=105, max_frames=0, number_of_sightings=1, min_size=80),
             ]
 
             for this_test in test_data:
@@ -173,14 +188,14 @@ class TestFaceLogImage(unittest.TestCase):
 
             face_log_image = FaceLogImage(host=host, verbose=True)
             image_path = os.path.join(face_detect_data_dir, image_file)
-            task = face_log_image.apply(image_path)
+            task = face_log_image.apply(image_path, min_size=40)
             return task
 
         # Test on some known videos
         def test_face_log(self):
             print "Testing face detection..."
 
-            test_data = { 'group.jpg':16 }
+            test_data = { 'group.jpg':15 }
 
             for key, value in test_data.iteritems():
                 print "** Testing {0} with expected result {1} **".format(key, value)
@@ -211,7 +226,7 @@ class TestSafeZone2d(unittest.TestCase):
             print "Testing SafeZone2d..."
 
             test_data = [
-                TestSafeZone2d.TestData(video_file='vegetation.avi', frames=667, max_frames=0),
+                TestSafeZone2d.TestData(video_file='vegetation.avi', frames=668, max_frames=0),
             ]
 
             for this_test in test_data:
@@ -222,6 +237,42 @@ class TestSafeZone2d(unittest.TestCase):
                 if this_test.max_frames == 0:
                     this_test.max_frames = this_test.frames
                 self.assertEqual(task['frames_processed'], this_test.max_frames)
+
+class TestEnhance(unittest.TestCase):
+
+        class TestData:
+            def __init__(self, video_file, algorithm, frames, max_frames):
+                self.video_file = video_file
+                self.algorithm = algorithm
+                self.frames = frames
+                self.max_frames = max_frames
+                self.verbose = True
+
+        # Do the actual alarm verification
+        def do_enhance(self, test_data):
+            video_path = os.path.join(enhance_data_dir, test_data.video_file)
+            enhance = Enhance(host=host, verbose=True, algorithm=test_data.algorithm)
+            task = enhance.apply(video_file=video_path, max_frames=test_data.max_frames)
+            return task
+
+        # Test on some known videos
+        def test_enhance(self):
+            print "Testing Enhance..."
+
+            test_data = [
+                TestEnhance.TestData(video_file='vegetation.avi', algorithm='stabilisation', frames=668, max_frames=0),
+                TestEnhance.TestData(video_file='vegetation.avi', algorithm='lace', frames=668, max_frames=0),
+            ]
+
+            for this_test in test_data:
+                print "** Testing {0} **".format(this_test.video_file)
+                task = self.do_enhance(this_test)
+                self.assert_(task['algorithm'], this_test.algorithm)
+                self.assertTrue(task['complete'])
+                if this_test.max_frames == 0:
+                    this_test.max_frames = this_test.frames
+                self.assertEqual(task['frames_processed'], this_test.max_frames)
+
 
 if __name__ == '__main__':
     unittest.main()

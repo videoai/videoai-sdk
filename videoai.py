@@ -1,4 +1,4 @@
-from videoai import VideoAIUser, KamCheck, AlarmVerification, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
+from videoai import VideoAIUser, KamCheck, AlarmVerification, Enhance, FaceDetect, FaceDetectImage, FaceLog, SafeZone2d
 import argparse
 
 
@@ -17,6 +17,12 @@ def min_size(value):
     return ivalue
 
 
+def between_zero_and_one(value):
+    ivalue = float(value)
+    if not (ivalue >=0 and ivalue <=1):
+        raise argparse.ArgumentTypeError("%s needs to be between 0 and 1" % value)
+    return ivalue
+
 parser = argparse.ArgumentParser(description='VideoAI command line tool.', epilog='Have fun using VideoAI.')
 parser.add_argument('-i', '--image', dest='image', help='specify an image')
 parser.add_argument('-v', '--video', dest='video', help='specify a video to use')
@@ -25,6 +31,8 @@ parser.add_argument('--key-file', dest='key_file', help='use this file for your 
 parser.add_argument('--kamcheck', dest='kamcheck', action='store_true', help='Perform kamcheck on image and video')
 parser.add_argument('--kamcheck-reference', dest='kamcheck_reference', action='store_true', help='Select reference image from video')
 parser.add_argument('--alarm-verification', dest='alarm_verification', action='store_true', help='Perform alarm verification on video')
+parser.add_argument('--stabilisation', dest='stabilisation', action='store_true', help='Perform stabilisation on video')
+parser.add_argument('--lace', dest='lace', action='store_true', help='Enhance video using LACE')
 parser.add_argument('--face-detect', dest='face_detect', action='store_true', help='Perform FaceDetect on video')
 parser.add_argument('--face-detect-image', dest='face_detect_image', action='store_true', help='Perform FaceDetect on image')
 parser.add_argument('--face-log', dest='face_log', action='store_true', help='Perform FaceLog on video')
@@ -34,6 +42,7 @@ parser.add_argument('--no-download', dest='download', action='store_false', help
 parser.add_argument('--blur', dest='blur', type=zero_or_one, default=0, help='If doing some face-detection, blur the faces in the output media')
 parser.add_argument('--gender', dest='gender', action='store_true', help='If doing face-log, detect the gender of the faces')
 parser.add_argument('--recognition', dest='recognition', action='store_true', help='If doing face-log, perform recognition from default watchlist')
+parser.add_argument('--compare-threshold', type=between_zero_and_one, dest='compare_threshold', default=0.8, help='When doing face-recognition, apply this threshold (0 to 1)')
 parser.add_argument('--start-frame', dest='start_frame', default=0, help='Start processing at this frame in the video')
 parser.add_argument('--min-certainty', dest='min_certainty', default=1.0, help='Minimum certainty to keep when doing face-log')
 parser.add_argument('--max-frames', dest='max_frames', default=0, help='Process this many frames (0 do all)')
@@ -66,6 +75,22 @@ elif args.alarm_verification:
         alarm_verification.tasks()
     else:
         tasks = alarm_verification.apply(video_file=args.video, download=args.download)
+
+elif args.stabilisation:
+    print "performing stabilisation enhancement"
+    stabilisation = Enhance(algorithm='stabilisation', host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        stabilisation.tasks()
+    else:
+        tasks = stabilisation.apply(video_file=args.video, download=args.download)
+
+elif args.lace:
+    print "performing LACE enhancement"
+    lace = Enhance(algorithm='lace', host=args.host, key_file=args.key_file, verbose=args.verbose)
+    if args.tasks:
+        lace.tasks()
+    else:
+        tasks = lace.apply(video_file=args.video, download=args.download)
 
 elif args.face_detect:
     print "performing face detection"
@@ -101,6 +126,7 @@ elif args.face_log:
                               download=args.download,
                               gender=args.gender,
                               recognition=args.recognition,
+                              threshold=args.compare_threshold,
                               start_frame=args.start_frame,
                               max_frames=args.max_frames,
                               min_size=args.min_size,

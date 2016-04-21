@@ -2,7 +2,7 @@ from videoai import KamCheck
 import os
 
 kamcheck_data_dir = os.path.join('..','test-data','KamCheck')
-#kamcheck_data_dir = '/ebuf/kieron/src/papillon/src/Data/Samples'
+#kamcheck_data_dir = '/ebuf/kieron/src/pappy/src/Data/Samples'
 
 kamcheck = KamCheck()
 
