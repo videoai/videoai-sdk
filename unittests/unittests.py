@@ -14,8 +14,9 @@ face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 face_recognition_data_dir = os.path.join('../..', 'test-data', 'FaceRecognition')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
 enhance_data_dir = os.path.join('../..', 'test-data', 'Enhance')
-#host="https://api.videoai.net"
-host = "http://localhost:5000"
+host="https://api.videoai.net"
+#host = "http://localhost:5000"
+#host = "http://52.49.251.87"
 
 class TestKamCheck(unittest.TestCase):
 
@@ -46,12 +47,12 @@ class TestKamCheck(unittest.TestCase):
             task = self.do_kam_check('kamcheck02.jpg', 'kamcheck02.avi')
             self.assert_(task['analytic'], "kamcheck")        
             self.assertTrue(task['complete'])
-            self.assertEqual(task['probability'], 0)
+            self.assertEqual(task['probability'], 100)
             
             task = self.do_kam_check('kamcheck03.jpg', 'kamcheck03.avi')
             self.assert_(task['analytic'], "kamcheck")        
             self.assertTrue(task['complete'])
-            self.assertEqual(task['probability'], 0)
+            self.assertEqual(task['probability'], 100)
             
             
             # what happens when someone gets them muddled up
