@@ -50,7 +50,7 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, allow_redirects=True)
         return r.content
 
-    def create_subject(self, name, user_data={}):
+    def create_subject(self, name, tag='', user_data={}):
         """
         Create a new subject
         :param name: a name to give the subject
@@ -64,6 +64,10 @@ class Recognition(VideoAIUser):
 
         data = { 'name': name, 'user_data': json_user_data }
 
+        # if we have a valid tag-id then we try and use it
+        if tag:
+            data['tag'] = tag
+
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
         print r.text
         print r.status_code
@@ -75,6 +79,33 @@ class Recognition(VideoAIUser):
         subject = r.json()['data']['subject']
         return subject
 
+    def edit_subject(self, subject_id, name='', tag='', user_data={}):
+        """
+        Edit an existing subject
+        """
+        url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
+        print "USING URL {}".format(url) 
+        data = {}
+
+        if name:
+            data['name'] = name
+
+        if user_data:
+            data['user_data'] = json.dumps(user_data)
+        
+        if tag:
+            data['tag'] = tag
+
+        r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Edit subject failed: {}". format(r.json()['message']))
+
+        subject = r.json()['data']['subject']
+        return subject
 
     def get_subject(self, subject_id):
         """
@@ -203,25 +234,43 @@ class Recognition(VideoAIUser):
 
         return True
 
-    def create_tag(self, name):
-        url = "{0}/{1}".format(self.base_url, self.tag)
 
-        data = { 'name': name }
+    # Create or update a tag for an object
+    def tag_object(self, name, object_id, new_name=''):
 
-        r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
+        if not object_id:
+            raise Exception("Tag object failed.  No object_id specified")
+        if not new_name:
+            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, name, object_id)
+        else:
+            url = "{0}/{1}/{2}/{3}/{4}".format(self.base_url, self.tag, name, object_id, new_name)
+
+        print 'URI: {}'.format(url)
+
+        r = requests.post(url, headers=self.header, allow_redirects=True)
         print r.text
         print r.status_code
 
         if r.json()['status'] != 'success':
             print r.text
-            raise Exception("Create tag failed: {}". format(r.json()['message']))
+            raise Exception("Update tag failed: {}". format(r.json()['message']))
 
-        tag = r.json()['data']['tag']
-        return tag
+        return True
 
-    def delete_tag(self, tag_id):
-
-        url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_id)
+    # Delete all tags
+    def delete_tag(self, tag_name, object_id=''):
+        print 'Deleting {} {}'.format(tag_name, object_id)
+        if not tag_name and not object_id:
+            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
+        elif tag_name and not object_id:     
+            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
+        elif not tag_name and object_id:     
+            url = "{0}/object/{1}".format(self.base_url, object_id)
+        elif tag_name and object_id:
+            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, tag_name, object_id)
+        else:
+            print 'Trouble in input parameters'
+            return False
 
         r = requests.delete(url, headers=self.header)
         print r.text
@@ -231,10 +280,24 @@ class Recognition(VideoAIUser):
             print r.text
             raise Exception("Delete tag failed: {}". format(r.json()['message']))
 
-        return tag_id
+        return True 
+    
 
-    def list_tags(self):
-        url = "{0}/{1}".format(self.base_url, self.tag)
+    # list all tags, tags for object, or objects with tag
+    def list_tags(self, tag_name='', object_id=''):
+
+        # Get every object and every tag
+        if tag_name and object_id:
+            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, tag_name, object_id)
+        # Get all objects with a particular tag
+        elif not object_id and tag_name:
+            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
+        # Get all tags for a particular object
+        elif object_id and not tag_name :
+            url = "{0}/object/{2}".format(self.base_url, self.tag, object_id)
+        else:
+            url = "{0}/{1}".format(self.base_url, self.tag)
+
 
         r = requests.get(url, headers=self.header)
         print r.text
@@ -242,9 +305,10 @@ class Recognition(VideoAIUser):
 
         if r.json()['status'] != 'success':
             print r.text
-            raise Exception("Create subject failed: {}". format(r.json()['message']))
+            raise Exception("List tags failed: {}". format(r.json()['message']))
 
         return r.json()['data']['tags']
 
-    def set_default_tag(self, tag_id):
-        pass
+
+
+
