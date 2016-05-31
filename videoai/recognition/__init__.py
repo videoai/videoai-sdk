@@ -10,6 +10,7 @@ class Recognition(VideoAIUser):
         super(Recognition, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.subject = 'subject'
         self.tag = 'tag'
+        self.tagged = 'tagged'
         self.description = 'description'
         self.detection = 'detection'
         self.sighting = 'sighting'
@@ -234,6 +235,25 @@ class Recognition(VideoAIUser):
 
         return True
 
+    def create_tag(self, name, colour='', sound=''):
+
+        url = "{0}/{1}/{2}".format(self.base_url, self.tag, name)
+        print url
+        data = {}
+        if colour:
+            data['colour'] = colour
+        if sound:
+            data['sound'] = sound
+
+        r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Update tag failed: {}". format(r.json()['message']))
+
+        return True
 
     # Create or update a tag for an object
     def tag_object(self, name, object_id, new_name=''):
@@ -241,9 +261,9 @@ class Recognition(VideoAIUser):
         if not object_id:
             raise Exception("Tag object failed.  No object_id specified")
         if not new_name:
-            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, name, object_id)
+            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tagged, name, object_id)
         else:
-            url = "{0}/{1}/{2}/{3}/{4}".format(self.base_url, self.tag, name, object_id, new_name)
+            url = "{0}/{1}/{2}/{3}/{4}".format(self.base_url, self.tagged, name, object_id, new_name)
 
         print 'URI: {}'.format(url)
 
@@ -258,7 +278,7 @@ class Recognition(VideoAIUser):
         return True
 
     # Delete all tags
-    def delete_tag(self, tag_name, object_id=''):
+    def delete_tag(self, tag_name='', object_id=''):
         print 'Deleting {} {}'.format(tag_name, object_id)
         if not tag_name and not object_id:
             url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
@@ -283,21 +303,39 @@ class Recognition(VideoAIUser):
         return True 
     
 
+    # list all available tags
+    def list_tags(self):
+
+        # Get every object and every tag
+        url = "{0}/{1}".format(self.base_url, self.tag)
+        
+        r = requests.get(url, headers=self.header)
+        print r.text
+        print r.status_code
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("List tags failed: {}". format(r.json()['message']))
+
+        return r.json()['data']['tags']
+
+
     # list all tags, tags for object, or objects with tag
-    def list_tags(self, tag_name='', object_id=''):
+    def list_tagged(self, tag_name='', object_id=''):
 
         # Get every object and every tag
         if tag_name and object_id:
-            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, tag_name, object_id)
+            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tagged, tag_name, object_id)
         # Get all objects with a particular tag
         elif not object_id and tag_name:
-            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
+            url = "{0}/{1}/{2}".format(self.base_url, self.tagged, tag_name)
         # Get all tags for a particular object
         elif object_id and not tag_name :
-            url = "{0}/object/{2}".format(self.base_url, self.tag, object_id)
+            url = "{0}/object/{2}".format(self.base_url, self.tagged, object_id)
         else:
-            url = "{0}/{1}".format(self.base_url, self.tag)
-
+            url = "{0}/{1}".format(self.base_url, self.tagged)
+        
+        print url
 
         r = requests.get(url, headers=self.header)
         print r.text
