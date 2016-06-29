@@ -301,10 +301,9 @@ class Recognition(VideoAIUser):
             raise Exception("Delete tag failed: {}". format(r.json()['message']))
 
         return True 
-    
-
+   
     # list all available tags
-    def list_tags(self):
+    def list_tags(self, ignore_unknown=False):
 
         # Get every object and every tag
         url = "{0}/{1}".format(self.base_url, self.tag)
@@ -317,8 +316,31 @@ class Recognition(VideoAIUser):
             print r.text
             raise Exception("List tags failed: {}". format(r.json()['message']))
 
+        if ignore_unknown:
+            tags = []
+            for tag in r.json()['data']['tags']:
+                if tag['name'] != 'Unknown':
+                    tags.append(tag)
+            return tags
+
         return r.json()['data']['tags']
 
+    def default_tags(self):
+        tags = [] 
+        for tag in self.list_tags():
+            tags.append(tag['name'])
+
+        if 'Unknown' not in tags:
+            self.create_tag('Unknown', '#95a5a6')
+        if 'Staff' not in tags:
+            self.create_tag('Staff', '#3498db')
+        if 'Contractor' not in tags:
+            self.create_tag('Contractor', '#9b59b6')
+        if 'Visitor' not in tags:
+            self.create_tag('Visitor', '#e67e22')
+        if 'High Risk' not in tags:
+            self.create_tag('High Risk', '#e74c3c')
+        return self.list_tags(ignore_unknown=True) 
 
     # list all tags, tags for object, or objects with tag
     def list_tagged(self, tag_name='', object_id=''):

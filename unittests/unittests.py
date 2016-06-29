@@ -14,8 +14,8 @@ face_detect_data_dir = os.path.join('../..', 'test-data', 'FaceDetector')
 face_recognition_data_dir = os.path.join('../..', 'test-data', 'FaceRecognition')
 safezone_data_dir = os.path.join('../..', 'test-data', 'SafeZone')
 enhance_data_dir = os.path.join('../..', 'test-data', 'Enhance')
-host="https://api.videoai.net"
-#host = "http://localhost:5000"
+#host="https://api.videoai.net"
+host = "http://localhost:5000"
 #host = "http://52.49.251.87"
 
 class TestKamCheck(unittest.TestCase):

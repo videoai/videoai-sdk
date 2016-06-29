@@ -13,6 +13,7 @@ parser.add_argument('--tag', dest='tag', help='A tag name.')
 parser.add_argument('--create', dest='create', action='store_true', help='Create a tag')
 parser.add_argument('--colour', dest='colour', default='#95a5a6', help='Create a tag with this colour')
 parser.add_argument('--delete', dest='delete', action='store_true', help='Delete a tag(s).')
+parser.add_argument('--default', dest='default', action='store_true', help='Create a default set of tags for user')
 parser.add_argument('--object', dest='object', help='Perform delete.')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose')
 parser.set_defaults(download=True)
@@ -44,4 +45,10 @@ elif args.create:
     except:
         print 'Failed to create tag {}'.format(args.tag)
 
+# Generic update tags
+elif args.default:
+    try:
+        recognition.default_tags()
+    except:
+        print 'Failed to create default tags'
 
