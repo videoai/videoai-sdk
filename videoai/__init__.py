@@ -40,7 +40,7 @@ class VideoAIUser(object):
         else:
             #self.base_url = "http://192.168.90.56:5000"
             #self.base_url = "https://api.videoai.net"
-            self.base_url = "http://192.168.42.204:5000"
+            self.base_url = "http://facerec.videoai.net:8000"
         self.verbose = verbose
         self.end_point = 'task'
 
