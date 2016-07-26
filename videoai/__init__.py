@@ -31,6 +31,9 @@ class VideoAIUser(object):
             config.read(key_file)
             keys = config['videoai.net']
             api_key = "{0}:{1}".format(keys['apiKey_id'], keys['apiKey_secret'])
+            # if user has not specified host and we have one in the key-file then use this
+            if not host and 'host' in keys:
+                host = keys['host']
         else:
             api_key = "{0}:{1}".format(api_id, api_secret)
         basic_auth_header = "Basic {0}".format(base64.b64encode(api_key))
@@ -38,11 +41,10 @@ class VideoAIUser(object):
         if host:
             self.base_url = host
         else:
-            #self.base_url = "http://192.168.90.56:5000"
-            #self.base_url = "https://api.videoai.net"
-            self.base_url = "http://facerec.videoai.net:8000"
+            self.base_url = "https://api.videoai.net"
         self.verbose = verbose
         self.end_point = 'task'
+        print "Using VideoAI host '{}'".format(self.base_url)
 
     def wait(self, task):
 
