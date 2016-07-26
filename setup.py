@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(
-    name = 'videoai',
+    name = 'videoai-sdk',
     version='4.0',
     description='An SDK for accessing VideoAI',
     keywords='video processing, machine learning, security, analytics, face-recognition',
