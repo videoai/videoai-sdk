@@ -1,9 +1,9 @@
 import os
-import configparser
 import base64
 import requests
 import time
 from os.path import expanduser
+from configparser import ConfigParser
 
 def print_http_response(r):
     '''
@@ -23,25 +23,33 @@ class VideoAIUser(object):
 
     def __init__(self,  host='', key_file='', api_id='', api_secret='', verbose=False):
 
+        # Always try and read a configuration file.  Although it is not an error if we can not find one
+        if not key_file:
+            home = expanduser("~")
+            key_file = os.path.join(home, '.videoai')
+        parser = ConfigParser()
+        parser.read(key_file)
+        section = 'videoai.net'
+
+        # Have we got a host, if not we try and get one?
+        if not host:
+            if parser.has_option(section, 'host'):
+                host = parser.get(section, 'host')
+            else:
+                host = 'https://api.videoai.net'
+        self.base_url = host
+
+        # We need some keys
         if not api_id or not api_secret:
-            if not key_file:
-                home = expanduser("~")
-                key_file = os.path.join(home, '.videoai')
-            config = configparser.ConfigParser()
-            config.read(key_file)
-            keys = config['videoai.net']
-            api_key = "{0}:{1}".format(keys['apiKey_id'], keys['apiKey_secret'])
-            # if user has not specified host and we have one in the key-file then use this
-            if not host and 'host' in keys:
-                host = keys['host']
-        else:
-            api_key = "{0}:{1}".format(api_id, api_secret)
+            if not parser.has_option(section, 'apiKey_id') or not parser.has_option(section, 'apiKey_secret'):
+                raise Exception('No valid configuration found for VideoAPI keys')
+            api_id = parser.get('videoai.net', 'apiKey_id')
+            api_secret = parser.get('videoai.net', 'apiKey_secret')
+
+        # Lets make the auth header
+        api_key = "{0}:{1}".format(api_id, api_secret)
         basic_auth_header = "Basic {0}".format(base64.b64encode(api_key))
         self.header = {'Authorization': basic_auth_header}
-        if host:
-            self.base_url = host
-        else:
-            self.base_url = "https://api.videoai.net"
         self.verbose = verbose
         self.end_point = 'task'
         print "Using VideoAI host '{}'".format(self.base_url)
