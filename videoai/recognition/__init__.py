@@ -51,7 +51,7 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, allow_redirects=True)
         return r.content
 
-    def create_subject(self, name, tag='', user_data={}):
+    def create_subject(self, name, tag='', user_data={'gender':'Unknown', 'notes':''}):
         """
         Create a new subject
         :param name: a name to give the subject
@@ -61,7 +61,6 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.subject)
 
         json_user_data = json.dumps(user_data)
-        print json_user_data
 
         data = { 'name': name, 'user_data': json_user_data }
 
@@ -70,11 +69,8 @@ class Recognition(VideoAIUser):
             data['tag'] = tag
 
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
-        print r.text
-        print r.status_code
 
         if r.json()['status'] != 'success':
-            print r.text
             raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         subject = r.json()['data']['subject']
