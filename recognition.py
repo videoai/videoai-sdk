@@ -7,13 +7,15 @@ parser = argparse.ArgumentParser(description='VideoAI command line tool.', epilo
 parser.add_argument('--image', dest='image', help='specify an image')
 parser.add_argument('--image-dir', dest='image_dir', help='Enroll all images in this directory')
 parser.add_argument('--video', dest='video', help='specify a video to use')
-parser.add_argument('--recognition', dest='recognition', action='store_true', help='List all the tags')
+parser.add_argument('--recognition', dest='recognition', action='store_true', help='Perform recognition on the video.')
 parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--name', dest='name', help='The subject name.')
 parser.add_argument('--create-subject', dest='create_subject', action='store_true', help='Create subject from image.')
 parser.add_argument('--delete-subjects', dest='delete_subjects', action='store_true', help='delete all subjects')
 parser.add_argument('--delete-subject', dest='delete_subject', help='delete a subject with this id')
+parser.add_argument('--add-sighting', dest='add_sighting', help='Add this sighting to a subject with an id')
+parser.add_argument('--subject-id', dest='subject_id', help='A subject id')
 parser.add_argument('--subjects', dest='subjects', action='store_true', help='List all subjects in database.')
 parser.add_argument('--gender', dest='gender', default='Unknown', help='Gender of subject.')
 parser.add_argument('--tag', dest='tag', default='Unknown', help='A tag name to give a subject.')
@@ -101,6 +103,7 @@ def enrol_from_image(host, key_file, verbose, image, name, tag):
     except Exception as err:
         raise Exception(err)
 
+# Create a subject and add face from image
 if args.create_subject and args.image:
     print 'Going to create a subject with name {}, with tag {} and gender {}'.format(args.name, args.tag, args.gender)
 
@@ -110,6 +113,7 @@ if args.create_subject and args.image:
     except Exception as err:
         print('Trouble creating subject with image', err)
 
+# Go through all images in a directory and enroll each image as a separate subject
 if args.image_dir:
     print 'Enrolling images in directory {}'.format(args.image_dir)
 
@@ -137,4 +141,11 @@ if args.delete_subject:
         print('Trouble deleting subject', err)
 
 
+# Add a sighting to a subject
+if args.add_sighting and args.subject_id:
+    print 'Add sighting {} to subject id {}'.format(args.add_sighting, args.subject_id)
+    try:
+        recognition.add_sighting_to_subject(args.add_sighting, args.subject_id)
+    except Exception as err:
+        print('Trouble adding sighting to subject', err)
 
