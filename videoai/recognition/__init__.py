@@ -51,11 +51,13 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, allow_redirects=True)
         return r.content
 
-    def create_subject(self, name, tag='', user_data={'gender':'Unknown', 'notes':''}):
+    def create_subject(self, name, tag='', tag_data='', user_data={'gender':'Unknown', 'notes':''}):
         """
         Create a new subject
         :param name: a name to give the subject
         :param user_data: a dictionary of user data, this will get stored as JSON
+        :param tag: a single tag to add and associate to the created subject
+        :param tag_data: a dictionary of tag, this will get stored as JSON
         :return: subject_id: The subject_id of the created subject
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
@@ -68,6 +70,10 @@ class Recognition(VideoAIUser):
         if tag:
             data['tag'] = tag
 
+        if tag_data:
+            data['tag_data'] = json.dumps(tag_data)
+
+        print ("data {}".format(data))
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
 
         if r.json()['status'] != 'success':
@@ -76,7 +82,7 @@ class Recognition(VideoAIUser):
         subject = r.json()['data']['subject']
         return subject
 
-    def edit_subject(self, subject_id, name='', tag='', user_data={}):
+    def edit_subject(self, subject_id, name='', tag_data_to_add='', tag_data_to_remove='', user_data={}):
         """
         Edit an existing subject
         """
@@ -90,8 +96,11 @@ class Recognition(VideoAIUser):
         if user_data:
             data['user_data'] = json.dumps(user_data)
         
-        if tag:
-            data['tag'] = tag
+        if tag_data_to_add:
+            data['tag_data_to_add'] = tag_data_to_add
+
+        if tag_data_to_remove:
+            data['tag_data_to_remove'] = tag_data_to_remove
 
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
         print r.text
@@ -169,6 +178,8 @@ class Recognition(VideoAIUser):
     def enrol_from_image(self, subject_id, image_file):
         pass
 
+    # Returns job_id if task has been successfully launched
+    # raise an error instead
     def add_sighting_to_subject(self, sighting_id, subject_id):
 
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
@@ -181,7 +192,11 @@ class Recognition(VideoAIUser):
             print r.text
             raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
 
-        return True
+        try:
+            s = r.json()['task']
+        except:
+            raise Exception("Failed to decode JSON")
+        return s
 
     def add_detection_to_subject(self, detection_id, subject_id):
 

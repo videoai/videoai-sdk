@@ -76,9 +76,15 @@ class VideoAIUser(object):
 
         return task
 
-    def download_file(self, url, local_filename=''):
+    def download_file(self, url, local_filename='', local_dir=''):
         if not local_filename:
             local_filename = url.split('/')[-1]
+
+        if local_dir:
+            if not os.path.exists(local_dir):
+                os.makedirs(local_dir)
+            local_filename = os.path.join(local_dir, local_filename)
+
         print 'Downloading {0} to {1}'.format(url, local_filename)
         r = requests.get(url, stream=True)
         with open(local_filename, 'wb') as f:
@@ -428,7 +434,8 @@ class FaceLogImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.75, wait_until_finished=True):
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.75,
+              wait_until_finished=True, local_output_dir=''):
 
         task = self.request(image_file, min_size=min_size, recognition=recognition, compare_threshold=compare_threshold)
 
@@ -442,8 +449,8 @@ class FaceLogImage(VideoAIUser):
             return task
 
         if download:
-            self.download_file(task['results_image'])
-            self.download_file(task['results_xml'])
+            self.download_file(task['results_image'], local_dir=local_output_dir)
+            self.download_file(task['results_xml'], local_dir=local_output_dir)
         return task
 
 
@@ -482,8 +489,8 @@ class FaceLog(VideoAIUser):
 
         return task
 
-    def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.75, wait_until_finished=True):
-
+    def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
+              compare_threshold=0.75, wait_until_finished=True, local_output_dir=''):
         task = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size)
 
         if not wait_until_finished:
@@ -496,12 +503,11 @@ class FaceLog(VideoAIUser):
             return task
 
         if download:
-            self.download_file(task['results_video'])
-            self.download_file(task['results_xml'])
+            self.download_file(task['results_video'], local_dir=local_output_dir)
+            self.download_file(task['results_xml'], local_dir=local_output_dir)
 
             for sighting in task['sightings']:
-                self.download_file(sighting['thumbnail'])
-
+                self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
         return task
 
 
