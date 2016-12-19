@@ -12,7 +12,6 @@ class Recognition(VideoAIUser):
         self.tag = 'tag'
         self.tagged = 'tagged'
         self.description = 'description'
-        self.detection = 'detection'
         self.sighting = 'sighting'
         pass
 
@@ -23,11 +22,6 @@ class Recognition(VideoAIUser):
 
     def description_thumbnail(self, description_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/description', description_id)
-        r = requests.get(url, headers=self.header, allow_redirects=True)
-        return r.content
-
-    def detection_thumbnail(self, detection_id):
-        url = '{}/{}/{}'.format(self.base_url, 'thumbnail/detection', detection_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
         return r.content
 
@@ -197,20 +191,6 @@ class Recognition(VideoAIUser):
         except:
             raise Exception("Failed to decode JSON")
         return s
-
-    def add_detection_to_subject(self, detection_id, subject_id):
-
-        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.detection, detection_id, subject_id)
-        print "URL {}".format(url)
-        r = requests.post(url, headers=self.header)
-        print r.text
-        print r.status_code
-
-        if r.json()['status'] != 'success':
-            print r.text
-            raise Exception("Add detection to subject failed: {}". format(r.json()['message']))
-
-        return True
 
     def list_sightings(self, page=1, number_per_page=1000):
         """

@@ -7,7 +7,8 @@ parser = argparse.ArgumentParser(description='VideoAI command line tool.', epilo
 parser.add_argument('--image', dest='image', help='specify an image')
 parser.add_argument('--image-dir', dest='image_dir', help='Enroll all images in this directory')
 parser.add_argument('--video', dest='video', help='specify a video to use')
-parser.add_argument('--recognition', dest='recognition', action='store_true', help='Perform recognition on the video.')
+parser.add_argument('--recognition', dest='recognition', action='store_true', help='Perform recognition on the video '
+                                                                                   'or image.')
 parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--name', dest='name', help='The subject name.')
@@ -34,7 +35,6 @@ if args.recognition and args.image:
                                     download=args.download,
                                     recognition=True,
                                     min_size=80)
-    print results
 
 # recognition on a video
 if args.recognition and args.video:
@@ -44,7 +44,6 @@ if args.recognition and args.video:
                                     download=args.download,
                                     recognition=True,
                                     min_size=80)
-    print results
 
 # List all subjects
 if args.subjects:
@@ -84,13 +83,12 @@ def enrol_from_image(host, key_file, verbose, image, name, tag):
                                       download=False,
                                       min_size=80)
 
-        if result['number_of_faces'] != 1:
+        if result['number_of_sightings'] != 1:
             raise Exception('Wrong amount of faces in input image')
 
         # The face of interest is the first one
-        face = result['detections'][0]
+        face = result['sightings'][0]
         gender = face['gender']
-        print face
 
         # Lets create the subject
         user_data = {'gender': gender, 'notes': ''}
@@ -99,7 +97,7 @@ def enrol_from_image(host, key_file, verbose, image, name, tag):
         print 'Created subject with id {}'.format(subject_id)
 
         # Now lets join a subject to a detection
-        recognition.add_detection_to_subject(face['detection_id'], subject_id)
+        recognition.add_sighting_to_subject(face['sighting_id'], subject_id)
     except Exception as err:
         raise Exception(err)
 
