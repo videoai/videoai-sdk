@@ -77,6 +77,11 @@ class VideoAIUser(object):
         return task
 
     def download_file(self, url, local_filename='', local_dir=''):
+
+        if not url:
+            print 'Invalid download URL'
+            return ''
+
         if not local_filename:
             local_filename = url.split('/')[-1]
 
@@ -526,12 +531,18 @@ class FaceAuthenticate(VideoAIUser):
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
-        files = {'gallery': open('{}'.format(gallery)),
-                 'probe1': open('{}'.format(probe1))
+        files = {
+                'gallery': open('{}'.format(gallery))
                 }
+
+        if probe1:
+            files['probe1'] = open('{}'.format(probe1))
 
         if probe2:
             files['probe2'] = open('{}'.format(probe2))
+
+        if len(files) < 2:
+            raise Exception('Only 1 image file specified')
 
         try:
             r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
@@ -549,7 +560,7 @@ class FaceAuthenticate(VideoAIUser):
 
         return task
 
-    def apply(self, gallery, probe1, probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
+    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
 
         task = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
 
@@ -563,9 +574,10 @@ class FaceAuthenticate(VideoAIUser):
             return task
 
         if download:
-            pass
-            #self.download_file(task['ults_image'])
-            #self.download_file(task['results_xml'])
+            self.download_file(task['gallery_thumbnail'])
+            self.download_file(task['probe1_thumbnail'])
+            if task['probe2_thumbnail']:
+                self.download_file(task['probe2_thumbnail'])
         return task
 
 
