@@ -505,6 +505,64 @@ class FaceLog(VideoAIUser):
         return task
 
 
+class FaceAuthenticate(VideoAIUser):
+
+    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
+        super(FaceAuthenticate, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
+        self.end_point = 'face_authenticate'
+
+    def request(self, gallery, probe1, probe2='', compare_threshold=0.6):
+
+        file_size = os.path.getsize(gallery)/1000000.0
+        print 'Requested FaceAuthenticate on {0} ({1} Mb)'.format(gallery, file_size)
+
+        data = {'compare_threshold': compare_threshold}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        files = {'gallery': open('{}'.format(gallery)),
+                 'probe1': open('{}'.format(probe1))
+                }
+
+        if probe2:
+            files['probe2'] = open('{}'.format(probe2))
+
+        try:
+            r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+        except:
+            return
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("Face Authenticate request failed: {}". format(r.json()['message']))
+
+        # while the task is not complete, lets keep checking it
+        task = r.json()['task']
+        if self.verbose:
+            print print_http_response(r)
+
+        return task
+
+    def apply(self, gallery, probe1, probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
+
+        task = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
+
+        if not wait_until_finished:
+            return task
+
+        task = self.wait(task)
+
+        if not task['success']:
+            print 'Failed FaceLogImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            pass
+            #self.download_file(task['ults_image'])
+            #self.download_file(task['results_xml'])
+        return task
+
+
 class SafeZone2d(VideoAIUser):
 
     def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
