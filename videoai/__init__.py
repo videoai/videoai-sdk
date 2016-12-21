@@ -439,7 +439,7 @@ class FaceLogImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.75,
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.5,
               wait_until_finished=True, local_output_dir=''):
 
         task = self.request(image_file, min_size=min_size, recognition=recognition, compare_threshold=compare_threshold)
@@ -455,7 +455,8 @@ class FaceLogImage(VideoAIUser):
 
         if download:
             self.download_file(task['results_image'], local_dir=local_output_dir)
-            self.download_file(task['results_xml'], local_dir=local_output_dir)
+            for sighting in task['sightings']:
+                self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
         return task
 
 
