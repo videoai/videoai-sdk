@@ -113,6 +113,18 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
+    def authenticate(self):
+        '''
+        Simply try to authenticate
+        :return:
+        '''
+        url = "{0}".format(self.base_url)
+        print url
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print_http_response(r)
+        return r.json()
+
 
     def tasks(self, page=1, number_per_page=3):
         '''
