@@ -223,8 +223,12 @@ class Recognition(VideoAIUser):
         if r.json()['status'] != 'success':
             print r.text
             raise Exception("Failed to delete description: {}". format(r.json()['message']))
-
-        return True
+        try:
+            s = r.json()['task']
+            print("S: {}".format(s))
+        except:
+            raise Exception("Failed to decode JSON")
+        return s
 
     def create_tag(self, name, colour='', sound=''):
 
