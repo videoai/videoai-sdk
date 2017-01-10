@@ -1,6 +1,6 @@
 __author__ = 'kieron'
 
-from videoai import VideoAIUser
+from videoai import VideoAIUser, print_http_response
 import json
 import requests
 
@@ -18,31 +18,43 @@ class Recognition(VideoAIUser):
     def subject_thumbnail(self, subject_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def description_thumbnail(self, description_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/description', description_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def sighting_thumbnail(self, sighting_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/sighting', sighting_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def sighting_acknowledge(self, sighting_id):
         url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def sighting_true(self, sighting_id):
         url = '{}/sighting/{}/true'.format(self.base_url, sighting_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def sighting_error(self, sighting_id):
         url = '{}/sighting/{}/error'.format(self.base_url, sighting_id)
         r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print print_http_response(r)
         return r.content
 
     def create_subject(self, name, tag='', tag_data='', user_data={'gender':'Unknown', 'notes':''}):
@@ -70,6 +82,9 @@ class Recognition(VideoAIUser):
         print ("data {}".format(data))
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
 
+        if self.verbose:
+            print print_http_response(r)
+
         if r.json()['status'] != 'success':
             raise Exception("Create subject failed: {}". format(r.json()['message']))
 
@@ -81,7 +96,6 @@ class Recognition(VideoAIUser):
         Edit an existing subject
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
-        print "USING URL {}".format(url) 
         data = {}
 
         if name:
@@ -97,12 +111,14 @@ class Recognition(VideoAIUser):
             data['tag_data_to_remove'] = tag_data_to_remove
 
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
-        print r.text
         print r.status_code
 
         if r.json()['status'] != 'success':
             print r.text
             raise Exception("Edit subject failed: {}". format(r.json()['message']))
+
+        if self.verbose:
+            print print_http_response(r)
 
         subject = r.json()['data']['subject']
         return subject
@@ -112,7 +128,6 @@ class Recognition(VideoAIUser):
         Get a subject
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
-        print 'URL {}'.format(url)
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
         print r.text
@@ -139,14 +154,35 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
 
         r = requests.delete(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
             raise Exception("Deleted subject failed: {}". format(r.json()['message']))
 
         return subject_id
+
+
+    def delete_subjects(self, tag_id=''):
+        """
+        Delete all the subjects
+        :param tag_id:  Only delete subjects with this tag
+        :return: list of subject_ids that have been deleted
+        """
+
+        subjects = self.list_subjects(tag_id=tag_id)
+        subjects_deleted = []
+        for subject in subjects:
+            subject_id = subject['subject_id']
+            try:
+                self.delete_subject(subject_id)
+                subjects_deleted.append(subject_id)
+            except:
+                print 'Trouble deleting subject "{}"'.format(subject_id)
+
+        return subjects_deleted
 
 
     def list_subjects(self, tag_id=''):
@@ -159,8 +195,9 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.subject)
 
         r = requests.get(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -179,8 +216,9 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
         print url
         r = requests.post(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -202,6 +240,9 @@ class Recognition(VideoAIUser):
 
         r = requests.get(url, headers=self.header)
 
+        if self.verbose:
+            print print_http_response(r)
+
         if r.json()['status'] != 'success':
             print r.text
             raise Exception("List sightings: {}". format(r.json()['message']))
@@ -217,8 +258,9 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}/{2}".format(self.base_url, self.description, description_id)
         print url
         r = requests.delete(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -237,8 +279,9 @@ class Recognition(VideoAIUser):
             data['sound'] = sound
 
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -259,8 +302,9 @@ class Recognition(VideoAIUser):
         print 'URI: {}'.format(url)
 
         r = requests.post(url, headers=self.header, allow_redirects=True)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -284,8 +328,9 @@ class Recognition(VideoAIUser):
             return False
 
         r = requests.delete(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -300,8 +345,9 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.tag)
         
         r = requests.get(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -348,11 +394,10 @@ class Recognition(VideoAIUser):
         else:
             url = "{0}/{1}".format(self.base_url, self.tagged)
         
-        print url
-
         r = requests.get(url, headers=self.header)
-        print r.text
-        print r.status_code
+
+        if self.verbose:
+            print print_http_response(r)
 
         if r.json()['status'] != 'success':
             print r.text
