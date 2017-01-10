@@ -77,6 +77,11 @@ class VideoAIUser(object):
         return task
 
     def download_file(self, url, local_filename='', local_dir=''):
+
+        if not url:
+            print 'Invalid download URL'
+            return ''
+
         if not local_filename:
             local_filename = url.split('/')[-1]
 
@@ -107,6 +112,18 @@ class VideoAIUser(object):
                     f.write(chunk)
                     f.flush()
         return local_filename
+
+    def authenticate(self):
+        '''
+        Simply try to authenticate
+        :return:
+        '''
+        url = "{0}".format(self.base_url)
+        print url
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        if self.verbose:
+            print_http_response(r)
+        return r.json()
 
 
     def tasks(self, page=1, number_per_page=3):
@@ -348,7 +365,6 @@ class FaceDetectImage(VideoAIUser):
 
         if download:
             self.download_file(task['results_image'])
-            self.download_file(task['results_xml'])
         return task
 
 
@@ -396,7 +412,6 @@ class FaceDetect(VideoAIUser):
 
         if download:
             self.download_file(task['results_video'])
-            self.download_file(task['results_xml'])
 
         return task
 
@@ -407,7 +422,7 @@ class FaceLogImage(VideoAIUser):
         super(FaceLogImage, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log_image'
 
-    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.75):
+    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6):
 
         file_size = os.path.getsize(image_file)/1000000.0
         print 'Requested FaceLogImage on {0} ({1} Mb)'.format(image_file, file_size)
@@ -434,7 +449,7 @@ class FaceLogImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.75,
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.5,
               wait_until_finished=True, local_output_dir=''):
 
         task = self.request(image_file, min_size=min_size, recognition=recognition, compare_threshold=compare_threshold)
@@ -450,7 +465,8 @@ class FaceLogImage(VideoAIUser):
 
         if download:
             self.download_file(task['results_image'], local_dir=local_output_dir)
-            self.download_file(task['results_xml'], local_dir=local_output_dir)
+            for sighting in task['sightings']:
+                self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
         return task
 
 
@@ -460,7 +476,7 @@ class FaceLog(VideoAIUser):
         super(FaceLog, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.75):
+    def request(self, video_file, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.6):
 
         file_size = os.path.getsize(video_file)/1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
@@ -490,7 +506,7 @@ class FaceLog(VideoAIUser):
         return task
 
     def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
-              compare_threshold=0.75, wait_until_finished=True, local_output_dir=''):
+              compare_threshold=0.6, wait_until_finished=True, local_output_dir=''):
         task = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold, start_frame=start_frame, max_frames=max_frames, min_size=min_size)
 
         if not wait_until_finished:
@@ -504,10 +520,74 @@ class FaceLog(VideoAIUser):
 
         if download:
             self.download_file(task['results_video'], local_dir=local_output_dir)
-            self.download_file(task['results_xml'], local_dir=local_output_dir)
 
             for sighting in task['sightings']:
                 self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
+        return task
+
+
+class FaceAuthenticate(VideoAIUser):
+
+    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
+        super(FaceAuthenticate, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret, verbose=verbose)
+        self.end_point = 'face_authenticate'
+
+    def request(self, gallery, probe1, probe2='', compare_threshold=0.6):
+
+        file_size = os.path.getsize(gallery)/1000000.0
+        print 'Requested FaceAuthenticate on {0} ({1} Mb)'.format(gallery, file_size)
+
+        data = {'compare_threshold': compare_threshold}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        files = {
+                'gallery': open('{}'.format(gallery))
+                }
+
+        if probe1:
+            files['probe1'] = open('{}'.format(probe1))
+
+        if probe2:
+            files['probe2'] = open('{}'.format(probe2))
+
+        if len(files) < 2:
+            raise Exception('Only 1 image file specified')
+
+        try:
+            r = requests.post(url, headers=self.header, files=files,  data=data, allow_redirects=True)
+        except:
+            return
+
+        if r.json()['status'] != 'success':
+            print print_http_response(r)
+            raise Exception("Face Authenticate request failed: {}". format(r.json()['message']))
+
+        # while the task is not complete, lets keep checking it
+        task = r.json()['task']
+        if self.verbose:
+            print print_http_response(r)
+
+        return task
+
+    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
+
+        task = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
+
+        if not wait_until_finished:
+            return task
+
+        task = self.wait(task)
+
+        if not task['success']:
+            print 'Failed FaceLogImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['gallery_thumbnail'])
+            self.download_file(task['probe1_thumbnail'])
+            if task['probe2_thumbnail']:
+                self.download_file(task['probe2_thumbnail'])
         return task
 
 
@@ -554,7 +634,6 @@ class SafeZone2d(VideoAIUser):
 
         if download:
             self.download_file(task['results_video'])
-            self.download_file(task['results_xml'])
 
         return task
 
