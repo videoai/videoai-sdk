@@ -91,7 +91,7 @@ class Recognition(VideoAIUser):
         subject = r.json()['data']['subject']
         return subject
 
-    def edit_subject(self, subject_id, name='', tag_data_to_add='', tag_data_to_remove='', user_data={}):
+    def edit_subject(self, subject_id, name='', tags=[], tag_data_to_add=[], tag_data_to_remove=[], user_data={}):
         """
         Edit an existing subject
         """
@@ -103,12 +103,15 @@ class Recognition(VideoAIUser):
 
         if user_data:
             data['user_data'] = json.dumps(user_data)
-        
+
+        if tags:
+            data['tags'] = json.dumps(tags)
+
         if tag_data_to_add:
-            data['tag_data_to_add'] = tag_data_to_add
+            data['tag_data_to_add'] = json.dumps(tag_data_to_add)
 
         if tag_data_to_remove:
-            data['tag_data_to_remove'] = tag_data_to_remove
+            data['tag_data_to_remove'] = json.dumps(tag_data_to_remove)
 
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
         print r.status_code
