@@ -449,7 +449,7 @@ class FaceLogImage(VideoAIUser):
 
         return task
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.5,
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6,
               wait_until_finished=True, local_output_dir=''):
 
         task = self.request(image_file, min_size=min_size, recognition=recognition, compare_threshold=compare_threshold)
