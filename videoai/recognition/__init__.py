@@ -25,7 +25,11 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, allow_redirects=True)
         if self.verbose:
             print print_http_response(r)
-        return r.content
+
+        if r.status_code == 200:
+            return r.content
+        else:
+            return ""
 
     def description_thumbnail(self, description_id):
         url = '{}/{}/{}?client_id={}'.format(self.base_url, 'thumbnail/description', description_id, self.client_id)
@@ -86,7 +90,6 @@ class Recognition(VideoAIUser):
         :param tag_data: a dictionary of tag, this will get stored as JSON
         :return: subject_id: The subject_id of the created subject
         """
-        print ("CREATE SUBJECT")
         url = "{0}/{1}?client_id={2}".format(self.base_url, self.subject, self.client_id)
 
         json_user_data = json.dumps(user_data)
@@ -316,9 +319,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        subjects = r.json()['sightings']
-        return subjects
-
     def add_description(self, subject_id, description_id):
         pass
 
@@ -467,7 +467,6 @@ class Recognition(VideoAIUser):
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
-        return r.json()
 
         return r.json()
 
