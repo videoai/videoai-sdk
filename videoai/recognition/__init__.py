@@ -6,14 +6,17 @@ import requests
 
 
 class Recognition(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(Recognition, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(Recognition, self).__init__(token=token,
+                                          host=host,
+                                          client_id=client_id,
+                                          client_secret=client_secret,
+                                          verbose=verbose)
         self.subject = 'subject'
         self.tag = 'tag'
         self.tagged = 'tagged'
         self.description = 'description'
         self.sighting = 'sighting'
-        pass
 
     def subject_thumbnail(self, subject_id):
         url = '{}/{}/{}?client_id={}'.format(self.base_url, 'thumbnail/subject', subject_id, self.client_id)
@@ -92,7 +95,7 @@ class Recognition(VideoAIUser):
         """
         url = "{0}/{1}?client_id={2}".format(self.base_url, self.subject, self.client_id)
 
-        json_user_data = json.dumps(user_data)
+        json_user_data = json.dumps(user_data, ensure_ascii=False)
 
         data = {'name': name, 'user_data': json_user_data}
 
@@ -107,6 +110,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST")
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
+        print 'Using encoding {}'.format(r.encoding)
 
         if self.verbose:
             print print_http_response(r)

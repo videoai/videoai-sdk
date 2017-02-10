@@ -5,9 +5,26 @@ import oauth2 as oauth
 import time
 from os.path import expanduser
 from configparser import ConfigParser
+import json
 
 SIGN_REQUEST = True
 
+
+class Error(Exception):
+    """Base-class for all exceptions raised by this module"""
+
+
+class InvalidKeyFile(Error):
+    """Invalid key-file"""
+
+
+def get_parameter(param, name, parser):
+    section = 'videoai.net'
+    if not param:
+        if not parser.has_option(section, name):
+            raise InvalidKeyFile('Missing {} parameter.'.format(name))
+        return parser.get(section, name)
+    return param
 
 def print_http_response(r):
     '''
@@ -23,23 +40,71 @@ def print_http_response(r):
     print r.text
 
 
-class VideoAIUser(object):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        # Always try and read a configuration file.  Although it is not an error if we can not find one
-        if not key_file:
-            home = expanduser("~")
-            key_file = os.path.join(home, '.videoai')
-        parser = ConfigParser()
-        parser.read(key_file)
-        section = 'videoai.net'
+# This function will sign a request using, method, url (with parameters), data (form parameters)
+#       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
+#       if oauth_nonce and oauth_timestamp are None they will be generated
+# and return the header containing signature
+def sign_request(url,
+                 client_id,
+                 client_secret,
+                 token='',
+                 data=None,
+                 method="GET",
+                 oauth_nonce=None,
+                 oauth_timestamp=None):
 
-        # Have we got a host, if not we try and get one?
-        if not host:
-            if parser.has_option(section, 'host'):
-                host = parser.get(section, 'host')
-            else:
-                host = 'https://api.videoai.net'
+    # Set the base oauth_* parameters along with any other parameters required
+    # for the API call.
+    # url = "{0}/{1}".format(self.base_url, self.end_point)
+    # files = {'video': open("{0}".format(video_file))}
+    # data = {'algorithm': self.algorithm, 'max_frames':max_frames }
+
+    if oauth_nonce is None:
+        oauth_nonce = oauth.generate_nonce()
+    if oauth_timestamp is None:
+        oauth_timestamp = str(int(time.time()))
+    params = {
+        'oauth_version': '1.0',
+        'oauth_nonce': oauth_nonce,
+        'oauth_timestamp': oauth_timestamp
+    }
+    if data is not None:
+        params.update(data)
+
+    # Set up instances of our Token and Consumer. The Consumer.key and
+    # Consumer.secret are given to you by the API provider. The Token.key and
+    # Token.secret is given to you after a three-legged authentication.
+    token = oauth.Token(key=token, secret="")
+    consumer = oauth.Consumer(key=client_id, secret=client_secret)
+
+    # Set our token/key parameters
+    params['oauth_token'] = token.key
+    params['oauth_consumer_key'] = consumer.key
+
+    # Create our request. Change method, etc. accordingly.
+    #print("----- Parameters: {}".format(params))
+    #print("----- URL {}".format(url))
+    #print("----- method {}".format(method))
+
+    req = oauth.Request(method=method.upper(), url=url, parameters=params)
+
+    # Sign the request.
+    signature_method = oauth.SignatureMethod_HMAC_SHA1()
+    req.sign_request(signature_method, consumer, token)
+
+    return req.to_header()
+
+
+class VideoAIUser(object):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+
         self.base_url = host
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token = token
+        self.verbose = verbose
+        self.end_point = 'task'
 
         # if the request is not signed token is provided in Authorization header Basic
         if not SIGN_REQUEST:
@@ -47,67 +112,77 @@ class VideoAIUser(object):
             basic_auth_header = "Basic {0}".format(formatted_token)
             self.header = {'Authorization': basic_auth_header}
 
-        # Lets make the auth header
-        # keep some information
-        if parser.has_option(section, 'client_id'):
-            self.client_id = parser.get(section, 'client_id')
-        if parser.has_option(section, 'client_secret'):
-            self.client_secret = parser.get(section, 'client_secret')
-        self.token = token
-
-        self.verbose = verbose
-        self.end_point = 'task'
         print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
         print "Using VideoAI host '{}'".format(self.base_url)
+
+
+    @classmethod
+    def create(cls,
+               key_file='',
+               email='',
+               password='',
+               client_id='',
+               client_secret='',
+               authentication_server='',
+               verbose=False):
+        """Construct from bits and pieces.  Missing parameters get picked up from key_file."""
+
+        # Need some information from the key-file
+        if not key_file:
+            home = expanduser("~")
+            key_file = os.path.join(home, '.videoai')
+        parser = ConfigParser()
+        parser.read(key_file)
+
+        try:
+            email = get_parameter(param=email, name='email', parser=parser)
+            password = get_parameter(param=password, name='password', parser=parser)
+            client_id = get_parameter(param=client_id, name='client_id', parser=parser)
+            client_secret = get_parameter(param=client_secret, name='client_secret', parser=parser)
+            authentication_server = get_parameter(param=authentication_server, name='authentication_server',
+                                                  parser=parser)
+        except:
+            raise
+
+        # Next we have
+        data = {
+            "email": email,
+            "password": password
+        }
+
+        url = '{}/auth/api_login?client_id={}'.format(authentication_server, client_id)
+        header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST')
+        response = requests.post(url, data, headers=header)
+        json_response = json.loads(response.text)
+        token = json_response['token']['token']
+        host = json_response['user']['api_url']
+
+        return cls(token=token, host=host, client_id=client_id, client_secret=client_secret, verbose=verbose)
 
     # This function will sign a request using, method, url (with parameters), data (form parameters)
     #       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
     #       if oauth_nonce and oauth_timestamp are None they will be generated
     # and return the header containing signature
-    def sign_request(self, url, data=None, method="GET", oauth_nonce=None, oauth_timestamp=None):
+    def sign_request(self,
+                     url,
+                     data=None,
+                     method="GET",
+                     oauth_nonce=None,
+                     oauth_timestamp=None):
 
-        # Set the base oauth_* parameters along with any other parameters required
-        # for the API call.
-        # url = "{0}/{1}".format(self.base_url, self.end_point)
-        # files = {'video': open("{0}".format(video_file))}
-        # data = {'algorithm': self.algorithm, 'max_frames':max_frames }
+        self.header = sign_request(url=url,
+                                   client_id=self.client_id,
+                                   client_secret=self.client_secret,
+                                   token=self.token,
+                                   data=data,
+                                   method=method,
+                                   oauth_nonce=oauth_nonce,
+                                   oauth_timestamp=oauth_timestamp)
 
-        if oauth_nonce is None:
-            oauth_nonce = oauth.generate_nonce()
-        if oauth_timestamp is None:
-            oauth_timestamp = str(int(time.time()))
-        params = {
-            'oauth_version': '1.0',
-            'oauth_nonce': oauth_nonce,
-            'oauth_timestamp': oauth_timestamp
-        }
-        if data is not None:
-            params.update(data)
+    def wait(self, response):
 
-        # Set up instances of our Token and Consumer. The Consumer.key and
-        # Consumer.secret are given to you by the API provider. The Token.key and
-        # Token.secret is given to you after a three-legged authentication.
-        token = oauth.Token(key=self.token, secret="")
-        consumer = oauth.Consumer(key=self.client_id, secret=self.client_secret)
+        task = response['task']
 
-        # Set our token/key parameters
-        params['oauth_token'] = token.key
-        params['oauth_consumer_key'] = consumer.key
-
-        # Create our request. Change method, etc. accordingly.
-        print("----- Parameters: {}".format(params))
-        print("----- URL {}".format(url))
-        print("----- method {}".format(method))
-
-        req = oauth.Request(method=method.upper(), url=url, parameters=params)
-
-        # Sign the request.
-        signature_method = oauth.SignatureMethod_HMAC_SHA1()
-        req.sign_request(signature_method, consumer, token)
-
-        self.header = req.to_header()
-
-    def wait(self, task):
         # now we need to add client_id in the url
         url = "{0}/{1}/{2}?client_id={3}".format(self.base_url, self.end_point, task['job_id'], self.client_id)
 
@@ -120,6 +195,10 @@ class VideoAIUser(object):
                 self.sign_request(url, data=None, method="GET")
 
             r = requests.get(url, headers=self.header, allow_redirects=True)
+            task = r.json()['task']
+
+            if self.verbose:
+                print r.json()
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
@@ -219,316 +298,11 @@ class VideoAIUser(object):
         return r.json()
 
 
-class KamCheck(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(KamCheck, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
-        self.end_point = 'kamcheck'
-
-    def request(self, image_file, video_file):
-
-        image_file_size = os.path.getsize(image_file) / 1000000.0
-        video_file_size = os.path.getsize(video_file) / 1000000.0
-        self.end_point = 'kamcheck'
-        print 'Requested KamCheck on image {0} ({1} Mb) and video {2} ({3} Mb)'.format(image_file, image_file_size,
-                                                                                       video_file, video_file_size)
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {'image': open("{0}".format(image_file)),
-                 'video': open("{0}".format(video_file))
-                 }
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="POST")
-
-        r = requests.post(url, headers=self.header, files=files, allow_redirects=True)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("KamCheck request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        if self.verbose:
-            print print_http_response(r)
-
-        return r.json()['task']
-
-    def apply(self, image_file, video_file, wait_until_finished=True):
-        task = self.request(image_file, video_file)
-
-        if not wait_until_finished:
-            return task
-
-        task = self.wait(task)
-        if not task['success']:
-            print 'Failed Kamcheck: {0}'.format(task['message'])
-        else:
-            print 'Reference {0}, video {1}, probability of tampering {2}%'.format(image_file, video_file,
-                                                                                   task['probability'])
-        return task
-
-    def request_get_reference_image(self, video_file):
-
-        video_file_size = os.path.getsize(video_file) / 1000000.0
-        self.end_point = 'kamcheck_get_reference'
-        print 'Requested KamCheckGetReference on video {0} ({1} Mb)'.format(video_file, video_file_size)
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {
-            'video': open("{0}".format(video_file))
-        }
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="POST")
-        r = requests.post(url, headers=self.header, files=files, allow_redirects=True)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("KamCheck GetReference Image request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        if self.verbose:
-            print print_http_response(r)
-
-        return r.json()['task']
-
-    def get_reference_image(self, video_file, download=True, wait_until_finished=True):
-        task = self.request_get_reference_image(video_file)
-
-        if not wait_until_finished:
-            return task
-
-        task = self.wait(task)
-        if not task['success']:
-            print 'Failed Kamcheck: {0}'.format(task['message'])
-        else:
-            print 'Video {0}, Frame {1} Reference Image {2}'.format(video_file, task['frame_number'],
-                                                                    task['reference_image'])
-        if download:
-            self.download_file(task['reference_image'])
-        return task
-
-
-class AlarmVerification(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(AlarmVerification, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
-        self.end_point = 'alarm_verification'
-
-    def request(self, video_file):
-        file_size = os.path.getsize(video_file) / 1000000.0
-        print 'Requested AlarmVerification on file {0} ({1} Mb)'.format(video_file, file_size)
-
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {'video': open("{0}".format(video_file))}
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="POST")
-        r = requests.post(url, headers=self.header, files=files, allow_redirects=True)
-
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("Alarm Verification request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        return r.json()['task']
-
-    def apply(self, video_file, download=True, wait_until_finished=True):
-
-        # do initial request
-        task = self.request(video_file)
-
-        if not wait_until_finished:
-            return task
-
-        # keep checking until it is done
-        task = self.wait(task)
-
-        # has the task been successful?
-        if not task['success']:
-            print 'Failed AlarmVerification: {0}'.format(task['message'])
-            return task
-
-        print 'AlarmVerification probability of alarm {}%'.format(task['probability'])
-        if download:
-            self.download_file(task['results_video'])
-        return task
-
-
-class Enhance(VideoAIUser):
-    def __init__(self, token, algorithm='stabilisation', host='', key_file='', verbose=False):
-        super(Enhance, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
-
-    def __init__(self, algorithm='stabilisation', host='', key_file='', api_id='', api_secret='', verbose=False):
-        super(Enhance, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret,
-                                      verbose=verbose)
-        self.algorithm = algorithm
-        self.end_point = 'enhance'
-
-    def request(self, video_file, max_frames):
-        file_size = os.path.getsize(video_file) / 1000000.0
-        print 'Requested stabilisation on file {0} ({1} Mb)'.format(video_file, file_size)
-
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {'video': open("{0}".format(video_file))}
-        data = {'algorithm': self.algorithm, 'max_frames': max_frames}
-        if SIGN_REQUEST:
-            self.sign_request(url, data=data, method="POST")
-        r = requests.post(url, headers=self.header, data=data, files=files, allow_redirects=True)
-
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("Stabilisation request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        return r.json()['task']
-
-    def apply(self, video_file, download=True, wait_until_finished=True, max_frames=0):
-
-        # do initial request
-        task = self.request(video_file, max_frames)
-
-        if not wait_until_finished:
-            return task
-
-        # keep checking until it is done
-        task = self.wait(task)
-
-        # has the task been successful?
-        if not task['success']:
-            print 'Failed Enhance: {0}'.format(task['message'])
-            return task
-
-        print task['message']
-        if download:
-            self.download_file(task['results_video'])
-        return task
-
-
-class FaceDetectImage(VideoAIUser):
-    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
-        super(FaceDetectImage, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret,
-                                              verbose=verbose)
-        self.end_point = 'face_detect_image'
-
-    def request(self, image_file, blur, min_size):
-
-        file_size = os.path.getsize(image_file) / 1000000.0
-        print 'Requested FaceDetectImage on {0} ({1} Mb)'.format(image_file, file_size)
-        data = {'blur': blur, 'min_size': min_size}
-
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-
-        files = {'image': open("{0}".format(image_file))}
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
-            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
-        except:
-            return
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("Face Detect request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
-        if self.verbose:
-            print print_http_response(r)
-
-        return task
-
-    def apply(self, image_file, download=True, blur=0, min_size=30, wait_until_finished=True):
-
-        task = self.request(image_file, blur, min_size)
-
-        if not wait_until_finished:
-            return task
-
-        task = self.wait(task)
-
-        if not task['success']:
-            print 'Failed FaceDetectImage: {0}'.format(task['message'])
-            return task
-
-        if download:
-            self.download_file(task['results_image'])
-        return task
-
-
-class FaceDetect(VideoAIUser):
-    def __init__(self, host='', key_file='', api_id='', api_secret='', verbose=False):
-        super(FaceDetect, self).__init__(host=host, key_file=key_file, api_id=api_id, api_secret=api_secret,
-                                         verbose=verbose)
-        self.end_point = 'face_detect'
-
-    def request(self, video_file, blur=0, start_frame=0, max_frames=0, min_size=30):
-
-        file_size = os.path.getsize(video_file) / 1000000.0
-        print 'Requested FaceDetect on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'blur': blur, 'start_frame': start_frame, 'max_frames': max_frames, 'min_size': min_size}
-
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {'video': open("{0}".format(video_file))}
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=data, method="POST")
-        r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("Face Detect request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
-
-        if self.verbose:
-            print print_http_response(r)
-
-        return task
-
-    def apply(self, video_file, download=True, blur=0, start_frame=0, max_frames=0, min_size=30,
-              wait_until_finished=True):
-
-        task = self.request(video_file, blur, start_frame, max_frames, min_size)
-
-        if not wait_until_finished:
-            return task
-
-        task = self.wait(task)
-
-        if not task['success']:
-            print 'Failed FaceDetect: {0}'.format(task['message'])
-            return task
-
-        if download:
-            self.download_file(task['results_video'])
-
-        return task
-
-
 class FaceLogImage(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(FaceLogImage, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(FaceLogImage, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                      verbose=verbose)
         self.end_point = 'face_log_image'
 
     def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6):
@@ -552,36 +326,22 @@ class FaceLogImage(VideoAIUser):
             print print_http_response(r)
             # raise Exception("Face Log request failed: {}". format(r.json()['message']))
 
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
         if self.verbose:
             print print_http_response(r)
 
-        return task
+        return r.json()
 
     def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.5,
               wait_until_finished=True, local_output_dir=''):
 
-        json_response = self.request(image_file, min_size=min_size, recognition=recognition,
-                                     compare_threshold=compare_threshold)
+        response = self.request(image_file, min_size=min_size, recognition=recognition,
+                                compare_threshold=compare_threshold)
 
-        if json_response['status'] != "success":
-            return json_response
-
-        task = json_response['task']
-
-        print("Task: {}".format(task))
         if not wait_until_finished:
-            return json_response
-            # return task
+            return response
 
-        print("before wait")
-        task = self.wait(task)
-        print("after wait")
+        response = self.wait(response)
+        task = response['task']
         if not task['success']:
             print 'Failed FaceLogImage: {0}'.format(task['message'])
             return task
@@ -594,8 +354,9 @@ class FaceLogImage(VideoAIUser):
 
 
 class FaceLog(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(FaceLog, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(FaceLog, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                      verbose=verbose)
         self.end_point = 'face_log'
 
     def request(self, video_file, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.6):
@@ -615,35 +376,26 @@ class FaceLog(VideoAIUser):
         files = {'video': open("{0}".format(video_file))}
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST")
-        print url
-
         r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
         if r.json()['status'] != 'success':
             print print_http_response(r)
-            # raise Exception("face_log request failed: {}". format(r.json()['message']))
+            raise Exception("face_log request failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
 
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
-        if self.verbose:
-            print print_http_response(r)
-
-        return task
-
     def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
               compare_threshold=0.6, wait_until_finished=True, local_output_dir=''):
 
-        task = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold,
+        response = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold,
                             start_frame=start_frame, max_frames=max_frames, min_size=min_size)
 
         if not wait_until_finished:
-            return task
+            return response
 
-        task = self.wait(task)
-
+        response = self.wait(response)
+        task = response['task']
         if not task['success']:
             print 'Failed FaceLog: {0}'.format(task['message'])
             return task
@@ -653,12 +405,14 @@ class FaceLog(VideoAIUser):
 
             for sighting in task['sightings']:
                 self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
-        return task
+        return response
 
 
 class FaceAuthenticate(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(FaceAuthenticate, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(FaceAuthenticate, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                               verbose=verbose)
         self.end_point = 'face_authenticate'
 
     def request(self, gallery, probe1, probe2='', compare_threshold=0.6):
@@ -694,26 +448,22 @@ class FaceAuthenticate(VideoAIUser):
             print print_http_response(r)
             # raise Exception("Face Authenticate request failed: {}". format(r.json()['message']))
 
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
         if self.verbose:
             print print_http_response(r)
 
-        return task
+        return r.json()
+
 
     def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
 
-        task = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
+        response = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
 
         if not wait_until_finished:
-            return task
+            return response
 
-        task = self.wait(task)
+        response = self.wait(response)
 
+        task = response['task']
         if not task['success']:
             print 'Failed FaceLogImage: {0}'.format(task['message'])
             return task
@@ -726,56 +476,5 @@ class FaceAuthenticate(VideoAIUser):
         return task
 
 
-class SafeZone2d(VideoAIUser):
-    def __init__(self, token, host='', key_file='', verbose=False):
-        super(SafeZone2d, self).__init__(token=token, host=host, key_file=key_file, verbose=verbose)
-        self.end_point = 'safezone_2d'
-
-    def request(self, video_file, start_frame=0, max_frames=0):
-
-        file_size = os.path.getsize(video_file) / 1000000.0
-        print 'Requested SafeZone2d on video {0} ({1} Mb)'.format(video_file, file_size)
-        data = {'start_frame': start_frame, 'max_frames': max_frames}
-
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
-        files = {'video': open("{0}".format(video_file))}
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=data, method="POST")
-
-        r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
-
-        if r.json()['status'] != 'success':
-            print print_http_response(r)
-            # raise Exception("safezone_2d request failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-        # while the task is not complete, lets keep checking it
-        task = r.json()['task']
-        if self.verbose:
-            print print_http_response(r)
-
-        return task
-
-    def apply(self, video_file, download=True, start_frame=0, max_frames=0, wait_until_finished=True):
-
-        task = self.request(video_file, start_frame, max_frames)
-
-        if not wait_until_finished:
-            return task
-
-        task = self.wait(task)
-
-        if not task['success']:
-            print 'Failed SafeZone2d: {0}'.format(task['message'])
-            return task
-
-        if download:
-            self.download_file(task['results_video'])
-
-        return task
 
 
