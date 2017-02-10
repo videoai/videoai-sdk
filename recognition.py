@@ -9,7 +9,6 @@ parser.add_argument('--image-dir', dest='image_dir', help='Enroll all images in 
 parser.add_argument('--video', dest='video', help='specify a video to use')
 parser.add_argument('--recognition', dest='recognition', action='store_true', help='Perform recognition on the video '
                                                                                    'or image.')
-parser.add_argument('--host', dest='host', default='', help='The VideoAI host to use')
 parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
 parser.add_argument('--name', dest='name', help='The subject name.')
 parser.add_argument('--create-subject', dest='create_subject', action='store_true', help='Create subject from image.')
@@ -25,25 +24,25 @@ parser.add_argument('--download', dest='download', action='store_true', help='Do
 parser.set_defaults(download=False)
 args = parser.parse_args()
 
-recognition = Recognition(host=args.host, key_file=args.key_file, verbose=args.verbose)
+recognition = Recognition.create(key_file=args.key_file, verbose=args.verbose)
 
 # recognition on an image
 if args.recognition and args.image:
     print 'Perform recognition on {}'.format(args.image)
-    face_log_image = FaceLogImage(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    results = face_log_image.apply( image_file=args.image,
-                                    download=args.download,
-                                    recognition=True,
-                                    min_size=80)
+    face_log_image = FaceLogImage.create(key_file=args.key_file, verbose=args.verbose)
+    results = face_log_image.apply(image_file=args.image,
+                                   download=args.download,
+                                   recognition=True,
+                                   min_size=80)
 
 # recognition on a video
 if args.recognition and args.video:
     print 'Perform recognition on {}'.format(args.video)
-    face_log = FaceLog(host=args.host, key_file=args.key_file, verbose=args.verbose)
-    results = face_log.apply( video_file=args.video,
-                                    download=args.download,
-                                    recognition=True,
-                                    min_size=80)
+    face_log = FaceLog.create(key_file=args.key_file, verbose=args.verbose)
+    results = face_log.apply(video_file=args.video,
+                             download=args.download,
+                             recognition=True,
+                             min_size=80)
 
 # List all subjects
 if args.subjects:
