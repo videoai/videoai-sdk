@@ -229,7 +229,7 @@ class VideoAIUser(object):
     def download_with_authentication(self, end_point, local_filename=''):
         if not local_filename:
             local_filename = end_point.split('/')[-1]
-        url = '{}{}?client_id={}'.format(self.base_url, end_point, self.client_id)
+        url = '{}{}'.format(self.base_url, end_point)
         print 'Downloading {0} to {1}'.format(url, local_filename)
 
         if SIGN_REQUEST:
@@ -249,7 +249,7 @@ class VideoAIUser(object):
         Simply try to authenticate
         :return:
         '''
-        url = "{0}/{1}?client_id={2}".format(self.base_url, "handshake", self.client_id)
+        url = "{0}/{1}".format(self.base_url, "handshake")
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -263,8 +263,7 @@ class VideoAIUser(object):
         Get a list of all tasks
         :return:
         '''
-        url = "{0}/{1}/{2}/{3}?client_id={4}".format(self.base_url, self.end_point, page, number_per_page,
-                                                     self.client_id)
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
@@ -286,7 +285,7 @@ class VideoAIUser(object):
         Get a specific task
         :return:
         '''
-        url = "{0}/{1}/{2}?client_id={3}".format(self.base_url, self.end_point, job_id, self.client_id)
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -310,7 +309,7 @@ class FaceLogImage(VideoAIUser):
 
         data = {'min_size': min_size, 'recognition': recognition, 'compare_threshold': compare_threshold}
 
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
+        url = "{0}/{1}".format(self.base_url, self.end_point)
 
         files = {'image': open("{0}".format(image_file))}
 
@@ -371,7 +370,7 @@ class FaceLog(VideoAIUser):
             'min_size': min_size,
         }
 
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
+        url = "{0}/{1}".format(self.base_url, self.end_point)
 
         files = {'video': open("{0}".format(video_file))}
         try:
@@ -429,7 +428,7 @@ class FaceAuthenticate(VideoAIUser):
 
         data = {'compare_threshold': compare_threshold}
 
-        url = "{0}/{1}?client_id={2}".format(self.base_url, self.end_point, self.client_id)
+        url = "{0}/{1}".format(self.base_url, self.end_point)
 
         files = {
             'gallery': open('{}'.format(gallery))
