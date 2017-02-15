@@ -112,7 +112,7 @@ class VideoAIUser(object):
             basic_auth_header = "Basic {0}".format(formatted_token)
             self.header = {'Authorization': basic_auth_header}
 
-        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
+#        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
         print "Using VideoAI host '{}'".format(self.base_url)
 
 
