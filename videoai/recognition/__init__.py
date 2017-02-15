@@ -266,8 +266,10 @@ class Recognition(VideoAIUser):
         :param tag_id:  Only delete subjects with this tag
         :return: list of subject_ids that have been deleted
         """
-
-        subjects = self.list_subjects(tag_id=tag_id)
+        subjects = []
+        response = self.list_subjects(tag_id=tag_id)
+        if response['status'] == "success":
+            subjects = response['data']['subjects']
         subjects_deleted = []
         for subject in subjects:
             subject_id = subject['subject_id']
