@@ -281,14 +281,16 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self, tag_id=''):
+    def list_subjects(self, watchlist_ids=[]):
         """
         List all the subjects
-        :param tag_id: If specified then filter by this tag
+        :param watchlist_ids: If specified then filter by these watchlist_ids
+        watchlist_ids should be formed : ['1', '2' ...]
         :return:
         """
-
         url = "{0}/{1}".format(self.base_url, self.subject)
+        if len(watchlist_ids) > 0:
+            url += "?watchlist_ids=" + json.dumps(watchlist_ids)
         print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
