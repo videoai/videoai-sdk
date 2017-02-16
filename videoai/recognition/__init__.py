@@ -278,8 +278,10 @@ class Recognition(VideoAIUser):
         :param tag_id:  Only delete subjects with this tag
         :return: list of subject_ids that have been deleted
         """
-
-        subjects = self.list_subjects(tag_id=tag_id)
+        subjects = []
+        response = self.list_subjects(tag_id=tag_id)
+        if response['status'] == "success":
+            subjects = response['data']['subjects']
         subjects_deleted = []
         for subject in subjects['data']['subjects']:
             subject_id = subject['subject_id']
@@ -291,14 +293,15 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self, tag_id=''):
+    def list_subjects(self, watchlist_ids=[]):
         """
         List all the subjects
-        :param tag_id: If specified then filter by this tag
+        :param watchlist_ids: If specified then filter by these watchlist_ids
         :return:
         """
-
         url = "{0}/{1}".format(self.base_url, self.subject)
+        if len(watchlist_ids) > 0:
+            url += "?watchlist_ids=" + json.dumps(watchlist_ids)
         print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")

@@ -114,7 +114,7 @@ class VideoAIUser(object):
             basic_auth_header = "Basic {0}".format(formatted_token)
             self.header = {'Authorization': basic_auth_header}
 
-        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
+#        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
         print "Using VideoAI host '{}'".format(self.base_url)
 
 
@@ -291,15 +291,36 @@ class VideoAIUser(object):
         :return:
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
+        print("URL {}".format(url))
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET")
+
+        r = requests.get(url, headers=self.header, allow_redirects=True)
+        #print("r.text {}".format(r.text))
+        if self.verbose:
+            print_http_response(r)
+        return r.json()
+
+    def result_file(self, day_count, job_id, filename):
+        '''
+        Get a result file
+        :return:
+        '''
+        url = "{}/results/{}/{}/{}".format(self.base_url, day_count, job_id, filename)
+        print("URL {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
 
+        print ("R: {}".format(r.headers))
         if self.verbose:
-            print_http_response(r)
-        return r.json()
+            print print_http_response(r)
 
+        if r.status_code == 200:
+            return r.content
+        else:
+            return ""
 
 class FaceLogImage(VideoAIUser):
 
