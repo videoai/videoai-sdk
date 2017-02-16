@@ -285,7 +285,6 @@ class Recognition(VideoAIUser):
         """
         List all the subjects
         :param watchlist_ids: If specified then filter by these watchlist_ids
-        watchlist_ids should be formed : ['1', '2' ...]
         :return:
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
