@@ -272,18 +272,18 @@ class Recognition(VideoAIUser):
 
         return subject_id
 
-    def delete_subjects(self, tag_id=''):
+    def delete_subjects(self, watchlist_ids=[]):
         """
         Delete all the subjects
         :param tag_id:  Only delete subjects with this tag
         :return: list of subject_ids that have been deleted
         """
         subjects = []
-        response = self.list_subjects(tag_id=tag_id)
+        response = self.list_subjects(watchlist_ids=watchlist_ids)
         if response['status'] == "success":
             subjects = response['data']['subjects']
         subjects_deleted = []
-        for subject in subjects['data']['subjects']:
+        for subject in subjects:
             subject_id = subject['subject_id']
             try:
                 self.delete_subject(subject_id)
