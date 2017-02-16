@@ -9,11 +9,12 @@ import json
 data_dir = os.path.join('../..', 'test-data', 'FaceRecognition')
 SIGHTINGS_FILE = 'sightings.txt'
 
+
 class TestEnrolSubjects(unittest.TestCase):
 
     def setUp(self):
-        self.face_log = FaceLog()
-        self.recognition = Recognition()
+        self.face_log = FaceLog.create()
+        self.recognition = Recognition.create()
 
     def test_face_log(self):
         '''
@@ -26,7 +27,8 @@ class TestEnrolSubjects(unittest.TestCase):
             return
 
         # lets delete any subjects we may already have
-        subjects = self.recognition.list_subjects()
+        json_data = self.recognition.list_subjects()
+        subjects = json_data['data']['subjects']
         for subject in subjects:
             print 'Going to delete {0}'.format(subject['subject_id'])
             deleted_id = self.recognition.delete_subject(subject['subject_id'])
@@ -35,26 +37,22 @@ class TestEnrolSubjects(unittest.TestCase):
 
         # these are the video files
         video_files = {
-            'Alberto': '{}/Subjects/Alberto.mov'.format(data_dir),
-            'Baris': '{}/Subjects/Baris.mov'.format(data_dir),
-            'Fred': '{}/Subjects/Fred.mov'.format(data_dir),
-            'Kjetil': '{}/Subjects/Kjetil.mov'.format(data_dir),
-            'Laurent': '{}/Subjects/Laurent.mov'.format(data_dir),
-            'Marie-Claude': '{}/Subjects/Marie-Claude.mov'.format(data_dir),
-            'Olivier': '{}/Subjects/Olivier.mov'.format(data_dir)
-        }
-        video_files1 = {
-            'Alberto': '{}/Subjects/Alberto.mov'.format(data_dir),
+            'Baris': '{}/Baris.mov'.format(data_dir),
+            'Kjetil': '{}/Kjetil.mov'.format(data_dir),
+            'Laurent': '{}/Laurent.mov'.format(data_dir),
+            'Marie-Claude': '{}/Marie-Claude.mov'.format(data_dir),
+            'Olivier': '{}/Olivier.mov'.format(data_dir)
         }
 
         # lets run face-log and get the sightings, enrol the subjects
         sighting_list = {}
         for name, video_file in video_files.iteritems():
-            task = self.face_log.apply(video_file=video_file, download=False, gender=True, max_frames=10)
-            self.assertTrue(task['success'])
-            sightings = task['sightings']
+            json_data = self.face_log.apply(video_file=video_file, download=False, max_frames=10)
+            print json.dumps(json_data, indent=4, sort_keys=True)
+            sightings = json_data['task']['sightings']
             self.assertEqual(1, len(sightings))
-            subject_id = self.recognition.create_subject(name=name)
+            cs_json_data = self.recognition.create_subject(name=name)
+            subject_id = cs_json_data['data']['subject']['subject_id']
             sighting_list[subject_id] = sightings[0]['sighting_id']
             print '{} {} {}'.format(subject_id, name, sightings[0]['sighting_id'])
 
@@ -74,51 +72,62 @@ class TestEnrolSubjects(unittest.TestCase):
             self.recognition.add_sighting_to_subject(sighting_id=sighting_id, subject_id=subject_id)
 
 
-
 class TestSubject(unittest.TestCase):
 
         class TestData:
-            def __init__(self, name, user_data):
+            def __init__(self, name):
                 self.name = name
-                self.user_data = user_data
                 self.verbose = True
 
         def setUp(self):
-            self.recognition = Recognition()
-            self.face_log = FaceLog()
+            self.recognition = Recognition.create()
+            self.face_log = FaceLog.create()
 
         # Test on some known videos
         def create_subjects(self):
             print "Creating some subjects"
 
             test_data = [
-                        TestSubject.TestData(name='Kieron', user_data='user data'),
-                        TestSubject.TestData(name='Katie', user_data='a lady')
+                        TestSubject.TestData(name='Kieron'),
+                        TestSubject.TestData(name='Katie')
             ]
+
+            json_response = self.recognition.list_tags()
+            tags = Tags.from_json(json_response)
+
+            print tags.to_json()
 
             for this_test in test_data:
                 print "** Testing {0} **".format(this_test.name)
-                subject = self.recognition.create_subject(name=this_test.name, user_data=this_test.user_data)
-                print 'created subject {name} {subject_id}'.format(name=subject['name'], subject_id=subject['subject_id'])
-                self.assertIsNotNone(subject['subject_id'])
+                json_data = self.recognition.create_subject(name=this_test.name)
+                print json_data
+                #print 'created subject {name} {subject_id}'.format(name=subject['name'], subject_id=subject[
+                # 'subject_id'])
+                #self.assertIsNotNone(subject['subject_id'])
 
         def list_subjects(self):
             print "List all the subjects"
 
-            subjects = self.recognition.list_subjects()
-
-            self.assertIsNotNone(subjects)
+            json_data = self.recognition.list_subjects()
+            self.assertIsNotNone(json_data)
+            self.assertEqual(json_data['status'], 'success')
+            subjects = json_data['data']['subjects']
+            print json.dumps(subjects, indent=4, sort_keys=True)
 
             for subject in subjects:
                 print '{0} has id {1} and thumbnail {2}'.format(subject['name'], subject['subject_id'], subject['thumbnail'])
-                self.recognition.download_with_authentication(subject['thumbnail'], '{}.jpg'.format(subject['subject_id']))
+                self.recognition.subject_thumbnail(subject['subject_id'])
 
         def delete_subjects(self):
-            subjects = self.recognition.list_subjects()
+            json_data = self.recognition.list_subjects()
+            self.assertIsNotNone(json_data)
+            self.assertEqual(json_data['status'], 'success')
+            subjects = json_data['data']['subjects']
             for subject in subjects:
                 print 'Going to delete {0}'.format(subject['subject_id'])
-                deleted_id = self.recognition.delete_subject(subject['subject_id'])
-                self.assertEqual(subject['subject_id'], deleted_id)
+                json_data = self.recognition.delete_subject(subject['subject_id'])
+                self.assertIsNotNone(json_data)
+                self.assertEqual(json_data['status'], 'success')
 
 
 class TestTag(unittest.TestCase):
@@ -129,7 +138,7 @@ class TestTag(unittest.TestCase):
                 self.verbose = True
 
         def setUp(self):
-            self.recognition = Recognition()
+            self.recognition = Recognition.create()
 
         def create_tags(self):
             print "Creating some watchlists"

@@ -3,6 +3,7 @@ __author__ = 'kieron'
 from videoai import VideoAIUser, print_http_response, SIGN_REQUEST
 import json
 import requests
+from collections import namedtuple
 
 
 class Recognition(VideoAIUser):
@@ -86,13 +87,21 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
-    def create_subject(self, name, tag='', tag_data='', user_data={'gender': 'Unknown', 'notes': ''}):
+    def create_subject(self,
+                       name,
+                       tag='',
+                       tag_data='',
+                       watchlist='',
+                       watchlist_data='',
+                       user_data={'gender': 'Unknown', 'notes': ''}):
         """
         Create a new subject
         :param name: a name to give the subject
         :param user_data: a dictionary of user data, this will get stored as JSON
         :param tag: a single tag to add and associate to the created subject
-        :param tag_data: a dictionary of tag, this will get stored as JSON
+        :param tag_data: a dictionary of tags, this will get stored as JSON
+        :param watchlist: a single watchlist-id to add and associate to the created subject
+        :param watchlist_data: a dictionary of watchlist-ids, this will get stored as JSON
         :return: subject_id: The subject_id of the created subject
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
@@ -108,11 +117,16 @@ class Recognition(VideoAIUser):
         if tag_data:
             data['tag_data'] = json.dumps(tag_data)
 
-        print("URL {}".format(url))
+        # if we have a valid tag-id then we try and use it
+        if watchlist:
+            data['watchlist'] = watchlist
+
+        if watchlist_data:
+            data['watchlist_data'] = json.dumps(watchlist_data)
+
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST")
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
-        print 'Using encoding {}'.format(r.encoding)
 
         if self.verbose:
             print print_http_response(r)
@@ -124,8 +138,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        subject = r.json()['data']['subject']
-        return subject
 
     def edit_subject_watchlist(self, subject_id, watchlist_ids=[], watchlist_ids_to_add='', watchlist_ids_to_remove=''):
         """
@@ -269,7 +281,7 @@ class Recognition(VideoAIUser):
 
         subjects = self.list_subjects(tag_id=tag_id)
         subjects_deleted = []
-        for subject in subjects:
+        for subject in subjects['data']['subjects']:
             subject_id = subject['subject_id']
             try:
                 self.delete_subject(subject_id)
@@ -413,7 +425,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        return True
 
     # Create or update a tag for an object
     def tag_object(self, name, object_id, new_name=''):
@@ -477,8 +488,7 @@ class Recognition(VideoAIUser):
 
         return True
 
-        # list all available tags
-
+    # list all available tags
     def list_tags(self, ignore_unknown=False):
 
         # Get every object and every tag
@@ -558,6 +568,35 @@ class Recognition(VideoAIUser):
 
         return r.json()['data']['tags']
 
+    # list all available tags
+    def list_tags(self, ignore_unknown=False):
+
+        # Get every object and every tag
+        url = "{0}/{1}".format(self.base_url, self.tag)
+        url += "?client_id={}".format(self.client_id)
+        print("URL: {}".format(url))
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET")
+
+        r = requests.get(url, headers=self.header)
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("List tags failed: {}". format(r.json()['message']))
+
+        if r.json()['status'] == 'success' and ignore_unknown:
+            tags = []
+            for tag in r.json()['data']['tags']:
+                if tag['name'] != 'Unknown':
+                    tags.append(tag)
+            # return tags
+            r.json()['data']['tags'] = tags
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
 
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False):

@@ -18,6 +18,8 @@ class InvalidKeyFile(Error):
 class FailedAPICall(Error):
     """Failed to call an API function"""
 
+class AuthenticationError(Error):
+    """Failed to be authenticated"""
 
 def get_parameter(param, name, parser):
     section = 'videoai.net'
@@ -154,6 +156,9 @@ class VideoAIUser(object):
         header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST')
         response = requests.post(url, data, headers=header)
         json_response = json.loads(response.text)
+
+        if 'status' in json_response and json_response['status'] == 'fail':
+            raise AuthenticationError(json_response['message'])
         token = json_response['token']['token']
         host = json_response['user']['api_url']
 
