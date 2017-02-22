@@ -23,7 +23,6 @@ class Recognition(VideoAIUser):
 
     def subject_thumbnail(self, subject_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         print url
@@ -39,7 +38,6 @@ class Recognition(VideoAIUser):
 
     def description_thumbnail(self, description_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/description', description_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -49,7 +47,6 @@ class Recognition(VideoAIUser):
 
     def sighting_thumbnail(self, sighting_id):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/sighting', sighting_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -59,7 +56,6 @@ class Recognition(VideoAIUser):
 
     def sighting_acknowledge(self, sighting_id):
         url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -69,7 +65,6 @@ class Recognition(VideoAIUser):
 
     def sighting_true(self, sighting_id):
         url = '{}/sighting/{}/true'.format(self.base_url, sighting_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -79,7 +74,6 @@ class Recognition(VideoAIUser):
 
     def sighting_error(self, sighting_id):
         url = '{}/sighting/{}/error'.format(self.base_url, sighting_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
@@ -167,15 +161,13 @@ class Recognition(VideoAIUser):
             print r.text
             # raise Exception("Edit subject failed: {}". format(r.json()['message']))
 
+        if self.verbose:
+            print print_http_response(r)
+
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
 
-        if self.verbose:
-            print print_http_response(r)
-
-        subject = r.json()['data']['subject']
-        return subject
 
     def edit_subject(self, subject_id, name='', tags=[], tag_data_to_add='', tag_data_to_remove='', user_data={}):
         """
@@ -202,21 +194,18 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="PUT")
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
-        print r.status_code
 
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("Edit subject failed: {}". format(r.json()['message']))
 
+        if self.verbose:
+            print print_http_response(r)
+
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
 
-        if self.verbose:
-            print print_http_response(r)
-
-        subject = r.json()['data']['subject']
-        return subject
 
     def get_subject(self, subject_id):
         """
@@ -224,13 +213,10 @@ class Recognition(VideoAIUser):
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
-        print r.text
-        print r.status_code
 
         if r.json()['status'] != 'success':
             print r.text
@@ -240,11 +226,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        try:
-            s = r.json()['data']['subject']
-        except:
-            raise Exception("Failed to decode JSON")
-        return s
 
     def delete_subject(self, subject_id):
         """
@@ -254,7 +235,6 @@ class Recognition(VideoAIUser):
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="DELETE")
         r = requests.delete(url, headers=self.header)
@@ -269,8 +249,6 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
-
-        return subject_id
 
     def delete_subjects(self, watchlist_ids=[]):
         """
@@ -302,7 +280,6 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.subject)
         if len(watchlist_ids) > 0:
             url += "?watchlist_ids=" + json.dumps(watchlist_ids)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -328,7 +305,6 @@ class Recognition(VideoAIUser):
     def add_sighting_to_subject(self, sighting_id, subject_id):
 
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="POST")
         r = requests.post(url, headers=self.header)
@@ -344,11 +320,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        try:
-            s = r.json()['task']
-        except:
-            raise Exception("Failed to decode JSON")
-        return s
 
     def list_sightings(self, page=1, number_per_page=1000):
         """
@@ -358,7 +329,6 @@ class Recognition(VideoAIUser):
 
         url = "{0}/{1}".format(self.base_url, self.sighting)
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -380,7 +350,6 @@ class Recognition(VideoAIUser):
 
     def delete_description(self, description_id):
         url = "{0}/{1}/{2}".format(self.base_url, self.description, description_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="DELETE")
         r = requests.delete(url, headers=self.header)
@@ -396,11 +365,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        try:
-            s = r.json()['task']
-        except:
-            raise Exception("Failed to decode JSON")
-        return s
 
     def create_tag(self, name, colour='', sound=''):
 
@@ -411,7 +375,6 @@ class Recognition(VideoAIUser):
             data['colour'] = colour
         if sound:
             data['sound'] = sound
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST")
 
@@ -439,7 +402,6 @@ class Recognition(VideoAIUser):
         else:
             url = "{0}/{1}/{2}/{3}/{4}".format(self.base_url, self.tagged, name, object_id, new_name)
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="POST")
 
@@ -454,8 +416,6 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
-
-        return True
 
     # Delete all tags
     def delete_tag(self, tag_name='', object_id=''):
@@ -472,7 +432,6 @@ class Recognition(VideoAIUser):
             print 'Trouble in input parameters'
             return False
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="DELETE")
 
@@ -489,14 +448,11 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        return True
-
     # list all available tags
     def list_tags(self, ignore_unknown=False):
 
         # Get every object and every tag
         url = "{0}/{1}".format(self.base_url, self.tag)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -552,7 +508,6 @@ class Recognition(VideoAIUser):
         else:
             url = "{0}/{1}".format(self.base_url, self.tagged)
 
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -569,7 +524,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-        return r.json()['data']['tags']
 
     # list all available tags
     def list_tags(self, ignore_unknown=False):
@@ -577,7 +531,6 @@ class Recognition(VideoAIUser):
         # Get every object and every tag
         url = "{0}/{1}".format(self.base_url, self.tag)
         url += "?client_id={}".format(self.client_id)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -603,10 +556,8 @@ class Recognition(VideoAIUser):
 
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False):
-        print ("IN LIST_WATCHLISTS")
         # Get every object and every tag
         url = "{0}/{1}".format(self.base_url, self.watchlist)
-        print("URL: {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 

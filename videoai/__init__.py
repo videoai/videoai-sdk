@@ -39,7 +39,8 @@ def print_http_response(r):
     print "Content-Type: {}".format(r.headers['content-type'])
     print "Content-Length: {}".format(r.headers['content-length'])
     print "Server: {}".format(r.headers['server'])
-    print "Date: {}".format(r.headers['date'])
+    if 'date' in r.headers:
+        print "Date: {}".format(r.headers['date'])
     print json.dumps(r.json(), indent=4, sort_keys=True)
 
 # This function will sign a request using, method, url (with parameters), data (form parameters)
@@ -189,13 +190,14 @@ class VideoAIUser(object):
         task = response['task']
 
         # now we need to add client_id in the url
-        url = "{0}/{1}/{2}?client_id={3}".format(self.base_url, self.end_point, task['job_id'], self.client_id)
+        # url = "{0}/{1}/{2}?client_id={3}".format(self.base_url, self.end_point, task['job_id'], self.client_id)
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
 
         if task['complete']:
             return task
 
         while not task['complete']:
-            time.sleep(1.0)
+            time.sleep(0.5)
             if SIGN_REQUEST:
                 self.sign_request(url, data=None, method="GET")
 
@@ -223,7 +225,9 @@ class VideoAIUser(object):
             local_filename = os.path.join(local_dir, local_filename)
 
         print 'Downloading {0} to {1}'.format(url, local_filename)
-        r = requests.get(url, stream=True)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET")
+        r = requests.get(url, headers=self.header, stream=True)
         with open(local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:  # filter out keep-alive new chunks
@@ -279,12 +283,6 @@ class VideoAIUser(object):
 
         return r.json()
 
-        if r.json()['status'] != 'success':
-            print r.text
-            # raise Exception("List tasks failed: {}".format(r.json()['message']))
-
-        return r.json()
-
     def task(self, job_id):
         '''
         Get a specific task
@@ -329,11 +327,16 @@ class FaceLogImage(VideoAIUser):
                                            verbose=verbose)
         self.end_point = 'face_log_image'
 
-    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6):
+    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6, top_n=1):
 
         file_size = os.path.getsize(image_file) / 1000000.0
 
-        data = {'min_size': min_size, 'recognition': recognition, 'compare_threshold': compare_threshold}
+        data = {
+                'min_size': min_size,
+                'recognition': recognition,
+                'compare_threshold': compare_threshold,
+                'top_n': top_n
+               }
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
@@ -342,7 +345,11 @@ class FaceLogImage(VideoAIUser):
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST")
-            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
+            r = requests.post(url,
+                              headers=self.header,
+                              files=files,
+                              data=data,
+                              allow_redirects=True)
             json_data = r.json()
 
             if self.verbose:
@@ -356,11 +363,14 @@ class FaceLogImage(VideoAIUser):
 
         return json_data
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.5,
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1,
               wait_until_finished=True, local_output_dir=''):
 
-        json_data = self.request(image_file, min_size=min_size, recognition=recognition,
-                                 compare_threshold=compare_threshold)
+        json_data = self.request(image_file,
+                                 min_size=min_size,
+                                 recognition=recognition,
+                                 compare_threshold=compare_threshold,
+                                 top_n=top_n)
 
         if not wait_until_finished:
             return json_data
@@ -384,16 +394,18 @@ class FaceLog(VideoAIUser):
                                       verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, start_frame=0, max_frames=0, min_size=80, recognition=0, compare_threshold=0.6):
+    def request(self, video_file, start_frame=0, max_frames=0, min_size=80,
+                recognition=0, compare_threshold=0.6, top_n=1):
 
         file_size = os.path.getsize(video_file) / 1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
         data = {
             'start_frame': start_frame,
             'max_frames': max_frames,
+            'min_size': min_size,
             'recognition': recognition,
             'compare_threshold': compare_threshold,
-            'min_size': min_size,
+            'top_n': top_n
         }
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
@@ -418,10 +430,15 @@ class FaceLog(VideoAIUser):
         return json_data
 
     def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
-              compare_threshold=0.6, wait_until_finished=True, local_output_dir=''):
+              compare_threshold=0.6, top_n=1, wait_until_finished=True, local_output_dir=''):
 
-        json_data = self.request(video_file, recognition=recognition, compare_threshold=compare_threshold,
-                                 start_frame=start_frame, max_frames=max_frames, min_size=min_size)
+        json_data = self.request(video_file,
+                                 recognition=recognition,
+                                 compare_threshold=compare_threshold,
+                                 top_n=top_n,
+                                 start_frame=start_frame,
+                                 max_frames=max_frames,
+                                 min_size=min_size)
 
         if not wait_until_finished:
             return json_data
