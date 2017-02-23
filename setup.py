@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name = 'videoai-sdk',
-    version='4.1',
+    version='5.0',
     description='An SDK for accessing VideoAI',
     keywords='video processing, machine learning, security, analytics, face-recognition',
     license='Commercial',
@@ -15,6 +15,10 @@ setup(
               ],
     platforms='any',
     install_requires=[
+        'requests>=2.11',
+        'configparser>=3.5',
+        'oauth2>=1.9',
+        'oauth2client>=1.2'
     ],
     include_package_data=True,
     zip_safe=False,
