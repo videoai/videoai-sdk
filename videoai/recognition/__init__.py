@@ -320,14 +320,13 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-
     def list_sightings(self, page=1, number_per_page=1000):
         """
         Get sightings
         :return:
         """
 
-        url = "{0}/{1}".format(self.base_url, self.sighting)
+        url = "{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
