@@ -1,9 +1,11 @@
 __author__ = 'kieron'
 
-from videoai import VideoAIUser, print_http_response, SIGN_REQUEST
+from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall
 import json
 import requests
-from collections import namedtuple
+
+class WatchlistNotFound(Error):
+    """Watchlist not found"""
 
 
 class Recognition(VideoAIUser):
@@ -213,14 +215,20 @@ class Recognition(VideoAIUser):
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
 
+        print url
+
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
 
+
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
+
+        #if self.verbose:
+        print print_http_response(r)
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
@@ -257,7 +265,7 @@ class Recognition(VideoAIUser):
         :return: list of subject_ids that have been deleted
         """
         subjects = []
-        response = self.list_subjects(watchlist_ids=watchlist_ids)
+        response = self.list_subjects(watchlist_data=watchlist_ids)
         if response['status'] == "success":
             subjects = response['data']['subjects']
         subjects_deleted = []
@@ -271,15 +279,29 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self, watchlist_ids=[]):
+    def list_subjects(self,
+                      watchlist='',
+                      watchlist_data=''
+                      ):
         """
         List all the subjects
         :param watchlist_ids: If specified then filter by these watchlist_ids
         :return:
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
-        if len(watchlist_ids) > 0:
-            url += "?watchlist_ids=" + json.dumps(watchlist_ids)
+
+        wl_ids = []
+
+        # if we have a valid tag-id then we try and use it
+        if watchlist:
+            print 'appending {}'.format(watchlist)
+            wl_ids.append(unicode(watchlist))
+
+        if watchlist_data:
+            wl_ids.extend(watchlist_data)
+
+        url = "{0}/{1}?watchlist_data={2}".format(self.base_url, self.subject, json.dumps(wl_ids))
+        print url
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -391,167 +413,6 @@ class Recognition(VideoAIUser):
         return r.json()
 
 
-    # Create or update a tag for an object
-    def tag_object(self, name, object_id, new_name=''):
-
-        if not object_id:
-            raise Exception("Tag object failed.  No object_id specified")
-        if not new_name:
-            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tagged, name, object_id)
-        else:
-            url = "{0}/{1}/{2}/{3}/{4}".format(self.base_url, self.tagged, name, object_id, new_name)
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="POST")
-
-        r = requests.post(url, headers=self.header, allow_redirects=True)
-
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print r.text
-            # raise Exception("Update tag failed: {}". format(r.json()['message']))
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-    # Delete all tags
-    def delete_tag(self, tag_name='', object_id=''):
-        print 'Deleting {} {}'.format(tag_name, object_id)
-        if not tag_name and not object_id:
-            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
-        elif tag_name and not object_id:
-            url = "{0}/{1}/{2}".format(self.base_url, self.tag, tag_name)
-        elif not tag_name and object_id:
-            url = "{0}/object/{1}".format(self.base_url, object_id)
-        elif tag_name and object_id:
-            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tag, tag_name, object_id)
-        else:
-            print 'Trouble in input parameters'
-            return False
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="DELETE")
-
-        r = requests.delete(url, headers=self.header)
-
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print r.text
-            # raise Exception("Delete tag failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-    # list all available tags
-    def list_tags(self, ignore_unknown=False):
-
-        # Get every object and every tag
-        url = "{0}/{1}".format(self.base_url, self.tag)
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
-
-        r = requests.get(url, headers=self.header)
-        if self.verbose:
-            print print_http_response(r)
-
-        json_resp = r.json()
-        if json_resp['status'] != 'success':
-            print r.text
-            # raise Exception("List tags failed: {}". format(r.json()['message']))
-
-        if json_resp['status'] == 'success' and ignore_unknown:
-            tags = []
-            for tag in json_resp['data']['tags']:
-                if tag['name'] != 'Unknown':
-                    tags.append(tag)
-            # return tags
-            json_resp['data']['tags'] = tags
-
-        return json_resp
-
-    def default_tags(self):
-        tags = []
-        for tag in self.list_tags():
-            tags.append(tag['name'])
-
-        if 'Unknown' not in tags:
-            self.create_tag('Unknown', '#95a5a6')
-        if 'Staff' not in tags:
-            self.create_tag('Staff', '#3498db')
-        if 'Contractor' not in tags:
-            self.create_tag('Contractor', '#9b59b6')
-        if 'Visitor' not in tags:
-            self.create_tag('Visitor', '#e67e22')
-        if 'High Risk' not in tags:
-            self.create_tag('High Risk', '#e74c3c')
-        return self.list_tags(ignore_unknown=True)
-
-        # list all tags, tags for object, or objects with tag
-
-    def list_tagged(self, tag_name='', object_id=''):
-
-        # Get every object and every tag
-        if tag_name and object_id:
-            url = "{0}/{1}/{2}/{3}".format(self.base_url, self.tagged, tag_name, object_id)
-        # Get all objects with a particular tag
-        elif not object_id and tag_name:
-            url = "{0}/{1}/{2}".format(self.base_url, self.tagged, tag_name)
-        # Get all tags for a particular object
-        elif object_id and not tag_name:
-            url = "{0}/object/{2}".format(self.base_url, self.tagged, object_id)
-        else:
-            url = "{0}/{1}".format(self.base_url, self.tagged)
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
-
-        r = requests.get(url, headers=self.header)
-
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print r.text
-            # raise Exception("List tags failed: {}". format(r.json()['message']))
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
-
-
-    # list all available tags
-    def list_tags(self, ignore_unknown=False):
-
-        # Get every object and every tag
-        url = "{0}/{1}".format(self.base_url, self.tag)
-        url += "?client_id={}".format(self.client_id)
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
-
-        r = requests.get(url, headers=self.header)
-        if self.verbose:
-            print print_http_response(r)
-
-        if r.json()['status'] != 'success':
-            print r.text
-            # raise Exception("List tags failed: {}". format(r.json()['message']))
-
-        if r.json()['status'] == 'success' and ignore_unknown:
-            tags = []
-            for tag in r.json()['data']['tags']:
-                if tag['name'] != 'Unknown':
-                    tags.append(tag)
-            # return tags
-            r.json()['data']['tags'] = tags
-
-        # We should return the complete json containing a status to be able to react to error
-        # @@ TODO lets try it
-        return r.json()
 
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False):
@@ -578,3 +439,32 @@ class Recognition(VideoAIUser):
             json_resp['data']['watchlists'] = watchlists
 
         return json_resp
+
+    def watchlist_id(self, watchlist_name):
+        watchlists = self.list_watchlists(ignore_unknown=True)
+        if watchlists['status'] != 'success':
+            raise FailedAPICall('list_watchlist')
+
+        watchlists = watchlists['data']['watchlists']
+        watchlist_id = None
+        for watchlist in watchlists:
+            if watchlist['name'] == watchlist_name:
+                watchlist_id = watchlist['id']
+                break
+        if watchlist_id is None:
+            raise WatchlistNotFound(watchlist_name)
+        return watchlist_id
+
+    def get_watchlist_ids(self):
+        watchlists = self.list_watchlists(ignore_unknown=True)['data']['watchlists']
+        watchlist_ids = [x['id'] for x in watchlists]
+        return watchlist_ids
+
+
+
+
+
+
+
+
+
