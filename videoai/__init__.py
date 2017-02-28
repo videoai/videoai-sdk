@@ -146,7 +146,7 @@ class VideoAIUser(object):
                                                   parser=parser)
         except:
             raise
-
+        print 'Logging {} into videoai'.format(email)
         # Next we have
         data = {
             "email": email,
