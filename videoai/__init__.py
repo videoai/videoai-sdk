@@ -294,7 +294,7 @@ class VideoAIUser(object):
             self.sign_request(url, data=None, method="GET")
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
-        #print("r.text {}".format(r.text))
+        print("r.text {}".format(r.text))
         if self.verbose:
             print_http_response(r)
         return r.json()
@@ -305,7 +305,6 @@ class VideoAIUser(object):
         :return:
         '''
         url = "{}/results/{}/{}/{}".format(self.base_url, day_count, job_id, filename)
-        print("URL {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 

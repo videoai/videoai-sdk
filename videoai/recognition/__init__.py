@@ -85,13 +85,15 @@ class Recognition(VideoAIUser):
                        name,
                        watchlist='',
                        watchlist_data='',
-                       user_data={'gender': 'Unknown', 'notes': ''}):
+                       user_data={'gender': 'Unknown', 'notes': ''},
+                       sighting_id=''):
         """
         Create a new subject
         :param name: a name to give the subject
         :param user_data: a dictionary of user data, this will get stored as JSON
         :param watchlist: a single watchlist-id to add and associate to the created subject
         :param watchlist_data: a dictionary of watchlist-ids, this will get stored as JSON
+        :param sighting_id: a single sighting-id to associate to the created subject
         :return: subject_id: The subject_id of the created subject
         """
         url = "{0}/{1}".format(self.base_url, self.subject)
@@ -100,6 +102,8 @@ class Recognition(VideoAIUser):
 
         data = {'name': name, 'user_data': json_user_data}
 
+        if sighting_id:
+            data['sighting_id'] = sighting_id
 
         # if we have a valid watchlist then we try and use it
         if watchlist:
