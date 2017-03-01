@@ -310,14 +310,13 @@ class VideoAIUser(object):
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
 
-        print ("R: {}".format(r.headers))
         if self.verbose:
             print print_http_response(r)
 
         if r.status_code == 200:
-            return r.content
+            return True, r.content, r.headers
         else:
-            return ""
+            return False, None, None
 
 class FaceLogImage(VideoAIUser):
 
