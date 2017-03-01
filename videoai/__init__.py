@@ -160,7 +160,7 @@ class VideoAIUser(object):
 
         if 'status' in json_response and json_response['status'] == 'fail':
             raise AuthenticationError(json_response['message'])
-        token = json_response['token']['token']
+        token = json_response['oauth_token']['token']
         host = json_response['user']['api_url']
 
         return cls(token=token, host=host, client_id=client_id, client_secret=client_secret, verbose=verbose)
