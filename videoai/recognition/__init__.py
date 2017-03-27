@@ -28,6 +28,7 @@ class Recognition(VideoAIUser):
         print url
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
+
         if self.verbose:
             print print_http_response(r)
 
@@ -50,6 +51,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
+
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -257,7 +259,7 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self,
+    def list_subjects(self, page=1, number_per_page=1000, data={},
                       watchlist='',
                       watchlist_data=''
                       ):
@@ -266,8 +268,6 @@ class Recognition(VideoAIUser):
         :param watchlist_ids: If specified then filter by these watchlist_ids
         :return:
         """
-        url = "{0}/{1}".format(self.base_url, self.subject)
-
         wl_ids = []
 
         # if we have a valid watchlist then we try and use it
@@ -278,8 +278,16 @@ class Recognition(VideoAIUser):
         if watchlist_data:
             wl_ids.extend(watchlist_data)
 
-        url = "{0}/{1}?watchlist_data={2}".format(self.base_url, self.subject, json.dumps(wl_ids))
-        print url
+        url = u"{}/{}/{}/{}".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
+        sep = "?"
+        if data is not None and len(data) > 0:
+            for i, v in enumerate(data):
+                if data[v] is not None:
+                    #print(data[v])
+                    url += sep + v + "=" + unicode(data[v])
+                    sep = "&"
+
+        #print url
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -320,14 +328,22 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-    def list_sightings(self, page=1, number_per_page=1000):
+    def list_sightings(self, page=1, number_per_page=1000, data={}):
         """
         Get sightings
         :return:
         """
+        url = u"{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
 
-        url = "{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
+        sep = "?"
+        if data is not None and len(data) > 0:
+            for i, v in enumerate(data):
+                if data[v] is not None:
+                    print(data[v])
+                    url += sep + v + "=" + unicode(data[v])
+                    sep = "&"
 
+        #print(u"URL {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -335,7 +351,6 @@ class Recognition(VideoAIUser):
 
         if self.verbose:
             print print_http_response(r)
-
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("List sightings: {}". format(r.json()['message']))
