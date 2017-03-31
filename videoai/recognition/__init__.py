@@ -52,6 +52,8 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET")
         r = requests.get(url, headers=self.header, allow_redirects=True)
 
+        if r.status_code != 200:
+            return ""
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -283,11 +285,9 @@ class Recognition(VideoAIUser):
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
-                    #print(data[v])
                     url += sep + v + "=" + unicode(data[v])
                     sep = "&"
 
-        #print url
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -339,7 +339,6 @@ class Recognition(VideoAIUser):
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
-                    print(data[v])
                     url += sep + v + "=" + unicode(data[v])
                     sep = "&"
 
@@ -351,8 +350,6 @@ class Recognition(VideoAIUser):
 
         if self.verbose:
             print print_http_response(r)
-        if r.json()['status'] != 'success':
-            print r.text
             # raise Exception("List sightings: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
