@@ -283,8 +283,8 @@ class Recognition(VideoAIUser):
         if watchlist_data:
             wl_ids.extend(watchlist_data)
 
-        url = u"{}/{}/{}/{}?watchlist_data={}&gender_male=false&gender_female=false".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
-        sep = "?"
+        url = u"{}/{}/{}/{}?watchlist_data={}".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
+        sep = "&"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
