@@ -498,7 +498,6 @@ class FaceAuthenticate(VideoAIUser):
         if json_data['status'] != 'success':
             raise FailedAPICall("Face Authenticate request failed: {}". format(r.json()['message']))
 
-
         return json_data
 
 
@@ -523,6 +522,156 @@ class FaceAuthenticate(VideoAIUser):
                 self.download_file(task['probe2_thumbnail'])
         return task
 
+
+class BuildVideo(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(BuildVideo, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                               verbose=verbose)
+        self.end_point = 'build_video'
+
+    def request(self, sighting_id=None, face_log_id=None):
+
+        print 'Requested Build Video'
+
+        if sighting_id is not None:
+            data = {'sighting_id': sighting_id}
+        else:
+            data = {'face_log_id': face_log_id}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST")
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('BuildVideo')
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("BuildVideo request failed: {}". format(r.json()['message']))
+
+        return json_data
+
+    def from_sighting(self, sighting_id, download=True, wait_until_finished=True):
+
+        json_data = self.request(sighting_id=sighting_id)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed BuildVideo: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['video'])
+        return task
+
+    def from_face_log(self, face_log_id, download=True, wait_until_finished=True):
+
+        json_data = self.request(face_log_id=face_log_id)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed BuildVideo: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['video'])
+
+        return task
+
+
+class BuildImage(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(BuildImage, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                               verbose=verbose)
+        self.end_point = 'build_image'
+
+    def request(self, sighting_id=None, face_log_image_id=None):
+
+        print 'Requested Build Image'
+
+        if sighting_id is not None:
+            data = {'sighting_id': sighting_id}
+        else:
+            data = {'face_log_image_id': face_log_image_id}
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        print url
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST")
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('BuildImage')
+        
+    
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("BuildImage request failed: {}". format(r.json()['message']))
+
+        return json_data
+
+    def from_sighting(self, sighting_id, download=True, wait_until_finished=True):
+
+        json_data = self.request(sighting_id=sighting_id)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed BuildImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['image'])
+        return task
+
+    def from_face_log_image(self, face_log_image_id, download=True, wait_until_finished=True):
+
+        json_data = self.request(face_log_image_id=face_log_image_id)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed BuildImage: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['image'])
+
+        return task
 
 
 

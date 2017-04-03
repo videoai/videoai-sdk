@@ -58,6 +58,7 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+
     def sighting_acknowledge(self, sighting_id):
         url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
         if SIGN_REQUEST:
@@ -261,7 +262,9 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self, page=1, number_per_page=1000, data={},
+    def list_subjects(self, page=1, 
+                      number_per_page=1000, 
+                      data={},
                       watchlist='',
                       watchlist_data=''
                       ):
@@ -280,7 +283,7 @@ class Recognition(VideoAIUser):
         if watchlist_data:
             wl_ids.extend(watchlist_data)
 
-        url = u"{}/{}/{}/{}".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
+        url = u"{}/{}/{}/{}?watchlist_data={}&gender_male=false&gender_female=false".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
