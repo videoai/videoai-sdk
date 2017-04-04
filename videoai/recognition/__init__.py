@@ -25,7 +25,6 @@ class Recognition(VideoAIUser):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        print url
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
 
@@ -198,8 +197,6 @@ class Recognition(VideoAIUser):
         """
         url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
 
-        print url
-
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
@@ -211,7 +208,7 @@ class Recognition(VideoAIUser):
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
 
         #if self.verbose:
-        print print_http_response(r)
+            print print_http_response(r)
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it

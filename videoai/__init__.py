@@ -116,7 +116,7 @@ class VideoAIUser(object):
             self.header = {'Authorization': basic_auth_header}
 
 #        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
-        print "Using VideoAI host '{}'".format(self.base_url)
+#        print "Using VideoAI host '{}'".format(self.base_url)
 
 
     @classmethod
@@ -142,11 +142,10 @@ class VideoAIUser(object):
             password = get_parameter(param=password, name='password', parser=parser)
             client_id = get_parameter(param=client_id, name='client_id', parser=parser)
             client_secret = get_parameter(param=client_secret, name='client_secret', parser=parser)
-            authentication_server = get_parameter(param=authentication_server, name='authentication_server',
-                                                  parser=parser)
+            authentication_server = get_parameter(param=authentication_server, name='authentication_server', parser=parser)
         except:
             raise
-        print 'Logging {} into videoai'.format(email)
+
         # Next we have
         data = {
             "email": email,
@@ -243,7 +242,6 @@ class VideoAIUser(object):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        print url
 
         r = requests.get(url, headers=self.header, stream=True)
         with open(local_filename, 'wb') as f:
@@ -289,14 +287,15 @@ class VideoAIUser(object):
         :return:
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-        print("URL {}".format(url))
+        
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
         r = requests.get(url, headers=self.header, allow_redirects=True)
-        print("r.text {}".format(r.text))
+        
         if self.verbose:
             print_http_response(r)
+       
         return r.json()
 
     def result_file(self, day_count, job_id, filename):
@@ -615,7 +614,7 @@ class BuildImage(VideoAIUser):
             data = {'face_log_image_id': face_log_image_id}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        print url
+        
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST")
