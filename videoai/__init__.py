@@ -7,6 +7,7 @@ from os.path import expanduser
 from configparser import ConfigParser
 import json
 
+VERIFY_SSL = False
 SIGN_REQUEST = True
 
 class Error(Exception):
@@ -155,7 +156,7 @@ class VideoAIUser(object):
 
         url = '{}/auth/api_login?client_id={}'.format(authentication_server, client_id)
         header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST')
-        response = requests.post(url, data, headers=header)
+        response = requests.post(url, data, headers=header, verify=VERIFY_SSL)
         json_response = json.loads(response.text)
 
         if 'status' in json_response and json_response['status'] == 'fail':
@@ -201,7 +202,7 @@ class VideoAIUser(object):
             if SIGN_REQUEST:
                 self.sign_request(url, data=None, method="GET")
 
-            r = requests.get(url, headers=self.header, allow_redirects=True)
+            r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
             task = json_data['task']
 
@@ -227,7 +228,7 @@ class VideoAIUser(object):
         print 'Downloading {0} to {1}'.format(url, local_filename)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, stream=True)
+        r = requests.get(url, headers=self.header, stream=True, verify=VERIFY_SSL)
         with open(local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:  # filter out keep-alive new chunks
@@ -245,7 +246,7 @@ class VideoAIUser(object):
             self.sign_request(url, data=None, method="GET")
         print url
 
-        r = requests.get(url, headers=self.header, stream=True)
+        r = requests.get(url, headers=self.header, stream=True, verify=VERIFY_SSL)
         with open(local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:  # filter out keep-alive new chunks
@@ -262,7 +263,7 @@ class VideoAIUser(object):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print_http_response(r)
         return r.json()
@@ -277,7 +278,7 @@ class VideoAIUser(object):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print_http_response(r)
 
@@ -293,7 +294,7 @@ class VideoAIUser(object):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         print("r.text {}".format(r.text))
         if self.verbose:
             print_http_response(r)
@@ -308,7 +309,7 @@ class VideoAIUser(object):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -347,7 +348,7 @@ class FaceLogImage(VideoAIUser):
                               headers=self.header,
                               files=files,
                               data=data,
-                              allow_redirects=True)
+                              allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
 
             if self.verbose:
@@ -414,7 +415,7 @@ class FaceLog(VideoAIUser):
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST")
 
-            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
+            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
 
             if self.verbose:
@@ -487,7 +488,7 @@ class FaceAuthenticate(VideoAIUser):
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST")
-            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True)
+            r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
         except:
             raise FailedAPICall('FaceAuthenticate')
@@ -547,7 +548,7 @@ class BuildVideo(VideoAIUser):
             r = requests.post(url,
                               headers=self.header,
                               data=data,
-                              allow_redirects=True)
+                              allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
         except:
             raise FailedAPICall('BuildVideo')
@@ -622,7 +623,7 @@ class BuildImage(VideoAIUser):
             r = requests.post(url,
                               headers=self.header,
                               data=data,
-                              allow_redirects=True)
+                              allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
         except:
             raise FailedAPICall('BuildImage')
