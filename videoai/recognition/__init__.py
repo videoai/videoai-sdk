@@ -1,6 +1,6 @@
 __author__ = 'kieron'
 
-from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall
+from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall, VERIFY_SSL
 import json
 import requests
 import datetime
@@ -29,7 +29,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -43,7 +43,7 @@ class Recognition(VideoAIUser):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/description', description_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -52,7 +52,7 @@ class Recognition(VideoAIUser):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/sighting', sighting_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
         if r.status_code != 200:
             return ""
@@ -65,7 +65,7 @@ class Recognition(VideoAIUser):
         url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -74,7 +74,7 @@ class Recognition(VideoAIUser):
         url = '{}/sighting/{}/true'.format(self.base_url, sighting_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -83,7 +83,7 @@ class Recognition(VideoAIUser):
         url = '{}/sighting/{}/error'.format(self.base_url, sighting_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print print_http_response(r)
         return r.content
@@ -139,7 +139,7 @@ class Recognition(VideoAIUser):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST")
-        r = requests.post(url, headers=self.header, data=data, allow_redirects=True)
+        r = requests.post(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -170,7 +170,7 @@ class Recognition(VideoAIUser):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="PUT")
-        r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
+        r = requests.put(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -213,7 +213,7 @@ class Recognition(VideoAIUser):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="PUT")
-        r = requests.put(url, headers=self.header, data=data, allow_redirects=True)
+        r = requests.put(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if r.json()['status'] != 'success':
             print r.text
@@ -236,7 +236,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header, allow_redirects=True)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
 
         if r.json()['status'] != 'success':
@@ -261,7 +261,7 @@ class Recognition(VideoAIUser):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="DELETE")
-        r = requests.delete(url, headers=self.header)
+        r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -295,7 +295,38 @@ class Recognition(VideoAIUser):
 
         return subjects_deleted
 
-    def list_subjects(self, page=1, 
+    def list_deleted_subjects(self, data={}):
+        """
+                List all deleted subjects
+                :return:
+                """
+
+        url = u"{}/{}/deleted".format(self.base_url, self.subject)
+        sep = "?"
+        if data is not None and len(data) > 0:
+            for i, v in enumerate(data):
+                if data[v] is not None:
+                    url += sep + v + "=" + unicode(data[v])
+                    sep = "&"
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET")
+
+        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Create subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
+
+
+    def list_subjects(self, page=1,
                       number_per_page=1000, 
                       data={},
                       watchlist='',
@@ -327,7 +358,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header)
+        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -351,7 +382,7 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="POST")
-        r = requests.post(url, headers=self.header)
+        r = requests.post(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -382,7 +413,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header)
+        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -399,7 +430,7 @@ class Recognition(VideoAIUser):
         url = "{0}/{1}/{2}".format(self.base_url, self.description, description_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="DELETE")
-        r = requests.delete(url, headers=self.header)
+        r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
             print print_http_response(r)
@@ -420,7 +451,7 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET")
 
-        r = requests.get(url, headers=self.header)
+        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
         if self.verbose:
             print print_http_response(r)
 
