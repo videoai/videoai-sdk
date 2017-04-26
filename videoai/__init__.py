@@ -673,4 +673,114 @@ class BuildImage(VideoAIUser):
         return task
 
 
+class ImportSubjects(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(ImportSubjects, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                               verbose=verbose)
+        self.end_point = 'import_subjects'
+
+    def request(self, input_file):
+
+        print 'Requested import subjects'
+
+        if not os.path.isfile(input_file) :
+            raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, method="POST")
+       
+
+            files = {'input_file': open("{0}".format(input_file))}
+            r = requests.post(url,
+                              headers=self.header,
+                              files=files,
+                              allow_redirects=True)
+            print_http_response(r)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('ImportSubjects')
+        
+    
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("ImportSubjects request failed: {}". format(r.json()['message']))
+
+        return json_data
+
+    def from_zip_file(self, input_file, wait_until_finished=True):
+
+        json_data = self.request(input_file=input_file)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed ImportSubjects: {0}'.format(task['message'])
+            return task
+
+        return json_data 
+
+
+class ExportSubjects(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(ExportSubjects, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                               verbose=verbose)
+        self.end_point = 'export_subjects'
+
+    def request(self):
+
+        print 'Requested export subjects'
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, method="POST")
+
+            r = requests.post(url,
+                              headers=self.header,
+                              allow_redirects=True)
+            print_http_response(r)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('ExportSubjects')
+        
+    
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("ExportSubjects request failed: {}". format(r.json()['message']))
+
+        return json_data
+
+    def export(self, wait_until_finished=True, download=True):
+
+        json_data = self.request()
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+       
+        if not task['success']:
+            print 'Failed ExportSubjects: {0}'.format(task['message'])
+            return task
+        
+        if download:
+            self.download_file(task['output_file'])
+
+        return json_data 
 
