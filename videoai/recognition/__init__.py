@@ -6,6 +6,9 @@ import requests
 import datetime
 
 
+# get rid of annoying message about using unverified certificates
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class WatchlistNotFound(Error):
     """Watchlist not found"""
