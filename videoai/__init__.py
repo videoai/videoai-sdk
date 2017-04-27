@@ -699,7 +699,8 @@ class ImportSubjects(VideoAIUser):
             r = requests.post(url,
                               headers=self.header,
                               files=files,
-                              allow_redirects=True)
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
             print_http_response(r)
             json_data = r.json()
         except:
@@ -750,7 +751,8 @@ class ExportSubjects(VideoAIUser):
 
             r = requests.post(url,
                               headers=self.header,
-                              allow_redirects=True)
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
             print_http_response(r)
             json_data = r.json()
         except:
