@@ -241,12 +241,11 @@ class Recognition(VideoAIUser):
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
-
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
 
-        #if self.verbose:
+        if self.verbose:
             print print_http_response(r)
 
         # We should return the complete json containing a status to be able to react to error
