@@ -393,7 +393,7 @@ class FaceLog(VideoAIUser):
         self.end_point = 'face_log'
 
     def request(self, video_file, start_frame=0, max_frames=0, min_size=80,
-                recognition=0, compare_threshold=0.6, top_n=1):
+                recognition=0, compare_threshold=0.6, top_n=1, subject_id=''):
 
         file_size = os.path.getsize(video_file) / 1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
@@ -403,7 +403,8 @@ class FaceLog(VideoAIUser):
             'min_size': min_size,
             'recognition': recognition,
             'compare_threshold': compare_threshold,
-            'top_n': top_n
+            'top_n': top_n,
+            'subject_id': subject_id
         }
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
@@ -428,7 +429,7 @@ class FaceLog(VideoAIUser):
         return json_data
 
     def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
-              compare_threshold=0.6, top_n=1, wait_until_finished=True, local_output_dir=''):
+              compare_threshold=0.6, top_n=1, subject_id='', wait_until_finished=True, local_output_dir=''):
 
         json_data = self.request(video_file,
                                  recognition=recognition,
@@ -436,7 +437,8 @@ class FaceLog(VideoAIUser):
                                  top_n=top_n,
                                  start_frame=start_frame,
                                  max_frames=max_frames,
-                                 min_size=min_size)
+                                 min_size=min_size,
+                                 subject_id=subject_id)
 
         if not wait_until_finished:
             return json_data
