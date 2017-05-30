@@ -83,7 +83,7 @@ def sign_request(url,
             j = json.loads(r.text)
             lat = j['latitude']
             lng = j['longitude']
-            device_data = 'device_id="{}", latitude="{}", longitude="{}"'.format(ip_addr,
+            device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr,
                                                                                  lat, lng)
         except:
             print("no ip or no location available")
