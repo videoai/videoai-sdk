@@ -55,22 +55,44 @@ def sign_request(url,
                  data=None,
                  method="GET",
                  oauth_nonce=None,
-                 oauth_timestamp=None):
+                 oauth_timestamp=None,
+                 request=None):
 
     # Set the base oauth_* parameters along with any other parameters required
     # for the API call.
     # url = "{0}/{1}".format(self.base_url, self.end_point)
     # files = {'video': open("{0}".format(video_file))}
     # data = {'algorithm': self.algorithm, 'max_frames':max_frames }
-
+    initial_user_agent = ""
+    if request is not None:
+        initial_user_agent = "user_agent={}".format(request.user_agent).replace(',', ';')
     if oauth_nonce is None:
         oauth_nonce = oauth.generate_nonce()
     if oauth_timestamp is None:
         oauth_timestamp = str(int(time.time()))
+
+    device_data = ""
+    if request is not None:
+        ip_addr = None
+        lat = None
+        lng = None
+        try:
+            ip_addr = request.remote_addr
+            send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
+            r = requests.get(send_url)
+            j = json.loads(r.text)
+            lat = j['latitude']
+            lng = j['longitude']
+            device_data = 'device_id="{}", latitude="{}", longitude="{}"'.format(ip_addr,
+                                                                                 lat, lng)
+        except:
+            print("no ip or no location available")
+
     params = {
         'oauth_version': '1.0',
         'oauth_nonce': oauth_nonce,
-        'oauth_timestamp': oauth_timestamp
+        'oauth_timestamp': oauth_timestamp,
+        'device_data': device_data
     }
     if data is not None:
         params.update(data)
@@ -96,7 +118,11 @@ def sign_request(url,
     signature_method = oauth.SignatureMethod_HMAC_SHA1()
     req.sign_request(signature_method, consumer, token)
 
-    return req.to_header()
+    header = req.to_header()
+    header['Device'] = '{}'.format(device_data)
+    header['Initial-User-Agent'] = initial_user_agent
+
+    return header
 
 
 class VideoAIUser(object):
@@ -128,7 +154,7 @@ class VideoAIUser(object):
                client_id='',
                client_secret='',
                authentication_server='',
-               verbose=False):
+               verbose=False, request=None):
         """Construct from bits and pieces.  Missing parameters get picked up from key_file."""
 
         # Need some information from the key-file
@@ -154,7 +180,7 @@ class VideoAIUser(object):
         }
 
         url = '{}/auth/api_login?client_id={}'.format(authentication_server, client_id)
-        header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST')
+        header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST', request=request)
         response = requests.post(url, data, headers=header, verify=VERIFY_SSL)
         json_response = json.loads(response.text)
 
@@ -174,7 +200,8 @@ class VideoAIUser(object):
                      data=None,
                      method="GET",
                      oauth_nonce=None,
-                     oauth_timestamp=None):
+                     oauth_timestamp=None,
+                     request=None):
 
         self.header = sign_request(url=url,
                                    client_id=self.client_id,
@@ -183,9 +210,10 @@ class VideoAIUser(object):
                                    data=data,
                                    method=method,
                                    oauth_nonce=oauth_nonce,
-                                   oauth_timestamp=oauth_timestamp)
+                                   oauth_timestamp=oauth_timestamp,
+                                   request=request)
 
-    def wait(self, response):
+    def wait(self, response, request=None):
 
         task = response['task']
 
@@ -199,7 +227,7 @@ class VideoAIUser(object):
         while not task['complete']:
             time.sleep(0.5)
             if SIGN_REQUEST:
-                self.sign_request(url, data=None, method="GET")
+                self.sign_request(url, data=None, method="GET", request=request)
 
             r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
@@ -210,7 +238,7 @@ class VideoAIUser(object):
 
         return json_data
 
-    def download_file(self, url, local_filename='', local_dir=''):
+    def download_file(self, url, local_filename='', local_dir='', request=None):
 
         if not url:
             print 'Invalid download URL'
@@ -226,7 +254,7 @@ class VideoAIUser(object):
 
         print 'Downloading {0} to {1}'.format(url, local_filename)
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, stream=True, verify=VERIFY_SSL)
         with open(local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
@@ -235,14 +263,14 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
-    def download_with_authentication(self, end_point, local_filename=''):
+    def download_with_authentication(self, end_point, local_filename='', request=None):
         if not local_filename:
             local_filename = end_point.split('/')[-1]
         url = '{}{}'.format(self.base_url, end_point)
         print 'Downloading {0} to {1}'.format(url, local_filename)
 
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, stream=True, verify=VERIFY_SSL)
         with open(local_filename, 'wb') as f:
@@ -252,21 +280,21 @@ class VideoAIUser(object):
                     f.flush()
         return local_filename
 
-    def authenticate(self):
+    def authenticate(self, request=None):
         '''
         Simply try to authenticate
         :return:
         '''
         url = "{0}/{1}".format(self.base_url, "handshake")
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print_http_response(r)
         return r.json()
 
-    def tasks(self, page=1, number_per_page=3):
+    def tasks(self, page=1, number_per_page=3, request=None):
         '''
         Get a list of all tasks
         :return:
@@ -274,7 +302,7 @@ class VideoAIUser(object):
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
 
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
@@ -282,7 +310,7 @@ class VideoAIUser(object):
 
         return r.json()
 
-    def task(self, job_id):
+    def task(self, job_id, request=None):
         '''
         Get a specific task
         :return:
@@ -290,7 +318,7 @@ class VideoAIUser(object):
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
         print("URL :{}".format(url))
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         
@@ -299,14 +327,14 @@ class VideoAIUser(object):
        
         return r.json()
 
-    def result_file(self, day_count, job_id, filename):
+    def result_file(self, day_count, job_id, filename, request=None):
         '''
         Get a result file
         :return:
         '''
         url = "{}/results/{}/{}/{}".format(self.base_url, day_count, job_id, filename)
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET")
+            self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
@@ -325,7 +353,7 @@ class FaceLogImage(VideoAIUser):
                                            verbose=verbose)
         self.end_point = 'face_log_image'
 
-    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, location=None):
+    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, location=None, request=None):
 
         file_size = os.path.getsize(image_file) / 1000000.0
 
@@ -344,7 +372,7 @@ class FaceLogImage(VideoAIUser):
 
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
+                self.sign_request(url, data=data, method="POST", request=request)
             r = requests.post(url,
                               headers=self.header,
                               files=files,
@@ -397,7 +425,7 @@ class FaceLog(VideoAIUser):
         self.end_point = 'face_log'
 
     def request(self, video_file, start_frame=0, max_frames=0, min_size=80,
-                recognition=0, compare_threshold=0.6, top_n=1, subject_id='', location=None):
+                recognition=0, compare_threshold=0.6, top_n=1, subject_id='', location=None, request=None):
 
         file_size = os.path.getsize(video_file) / 1000000.0
         print 'Requested FaceLog on video {0} ({1} Mb)'.format(video_file, file_size)
@@ -413,13 +441,15 @@ class FaceLog(VideoAIUser):
         if location is not None:
             data['location'] = location
 
+        print("location : {}".format(data['location']))
+
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
         files = {'video': open("{0}".format(video_file))}
         try:
 
             if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
+                self.sign_request(url, data=data, method="POST", request=request)
 
             r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
@@ -471,7 +501,7 @@ class FaceAuthenticate(VideoAIUser):
                                                verbose=verbose)
         self.end_point = 'face_authenticate'
 
-    def request(self, gallery, probe1, probe2='', compare_threshold=0.6):
+    def request(self, gallery, probe1, probe2='', compare_threshold=0.6, request=None):
 
         file_size = os.path.getsize(gallery) / 1000000.0
         print 'Requested FaceAuthenticate on {0} ({1} Mb)'.format(gallery, file_size)
@@ -495,7 +525,7 @@ class FaceAuthenticate(VideoAIUser):
 
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
+                self.sign_request(url, data=data, method="POST", request=request)
             r = requests.post(url, headers=self.header, files=files, data=data, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
         except:
@@ -539,7 +569,7 @@ class BuildVideo(VideoAIUser):
                                                verbose=verbose)
         self.end_point = 'build_video'
 
-    def request(self, sighting_id=None, face_log_id=None):
+    def request(self, sighting_id=None, face_log_id=None, request=None):
 
         print 'Requested Build Video'
 
@@ -552,7 +582,7 @@ class BuildVideo(VideoAIUser):
 
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
+                self.sign_request(url, data=data, method="POST", request=request)
             r = requests.post(url,
                               headers=self.header,
                               data=data,
@@ -614,7 +644,7 @@ class BuildImage(VideoAIUser):
                                                verbose=verbose)
         self.end_point = 'build_image'
 
-    def request(self, sighting_id=None, face_log_image_id=None):
+    def request(self, sighting_id=None, face_log_image_id=None, request=None):
 
         print 'Requested Build Image'
 
@@ -627,7 +657,7 @@ class BuildImage(VideoAIUser):
         
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST")
+                self.sign_request(url, data=data, method="POST", request=request)
             r = requests.post(url,
                               headers=self.header,
                               data=data,
@@ -690,7 +720,7 @@ class ImportSubjects(VideoAIUser):
                                                verbose=verbose)
         self.end_point = 'import_subjects'
 
-    def request(self, input_file):
+    def request(self, input_file, request=None):
 
         print 'Requested import subjects'
 
@@ -701,7 +731,7 @@ class ImportSubjects(VideoAIUser):
         
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, method="POST")
+                self.sign_request(url, method="POST", request=request)
        
 
             files = {'input_file': open("{0}".format(input_file))}
@@ -748,7 +778,7 @@ class ExportSubjects(VideoAIUser):
                                                verbose=verbose)
         self.end_point = 'export_subjects'
 
-    def request(self):
+    def request(self, request=None):
 
         print 'Requested export subjects'
 
@@ -756,7 +786,7 @@ class ExportSubjects(VideoAIUser):
         
         try:
             if SIGN_REQUEST:
-                self.sign_request(url, method="POST")
+                self.sign_request(url, method="POST", request=request)
 
             r = requests.post(url,
                               headers=self.header,
