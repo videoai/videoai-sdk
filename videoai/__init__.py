@@ -393,14 +393,15 @@ class FaceLogImage(VideoAIUser):
         return json_data
 
     def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1,
-              wait_until_finished=True, local_output_dir='', location=None):
+              wait_until_finished=True, local_output_dir='', location=None, request=None):
 
         json_data = self.request(image_file,
                                  min_size=min_size,
                                  recognition=recognition,
                                  compare_threshold=compare_threshold,
                                  top_n=top_n,
-                                 location=location)
+                                 location=location,
+                                 request=request)
 
         if not wait_until_finished:
             return json_data
@@ -465,7 +466,8 @@ class FaceLog(VideoAIUser):
         return json_data
 
     def apply(self, video_file, download=True, start_frame=0, max_frames=0, min_size=80, recognition=0,
-              compare_threshold=0.6, top_n=1, subject_id='', wait_until_finished=True, local_output_dir='', location=None):
+              compare_threshold=0.6, top_n=1, subject_id='', wait_until_finished=True, local_output_dir='', location=None,
+              request=request):
 
         json_data = self.request(video_file,
                                  recognition=recognition,
@@ -475,7 +477,8 @@ class FaceLog(VideoAIUser):
                                  max_frames=max_frames,
                                  min_size=min_size,
                                  subject_id=subject_id,
-                                 location=location)
+                                 location=location,
+                                 request=request)
 
         if not wait_until_finished:
             return json_data
@@ -540,9 +543,9 @@ class FaceAuthenticate(VideoAIUser):
         return json_data
 
 
-    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True):
+    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True, request=None):
 
-        json_data = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold)
+        json_data = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold, request=request)
 
         if not wait_until_finished:
             return json_data

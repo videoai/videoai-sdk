@@ -406,7 +406,7 @@ class Recognition(VideoAIUser):
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
-        print("request {}".format(request))
+        #print("request {}".format(request))
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
