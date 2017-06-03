@@ -375,6 +375,71 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
+    
+    
+    
+    
+    def get_description(self,
+                        description_id,
+                        request=None
+    ):
+        """
+        List all the descriptions in the database
+        :param description_id: The description you want to get 
+        :return:
+        """
+        url = u"{}/{}/{}".format(self.base_url, self.description, description_id)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+        
+        self.verbose=True
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Get description failed: {}". format(r.json()['message']))
+
+        return r.json()
+    def list_descriptions(self, 
+                          page=1,
+                          number_per_page=1000, 
+                          updated=None,
+                          binary=False,
+                          request=None
+    ):
+        """
+        List all the descriptions in the database
+        :param updated: Time in UTC . 
+        :param binary: Get the binary data of the description
+        :return:
+        """
+        url = u"{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
+
+        data = {
+            'binary': str(binary)
+        }
+        if updated is not None:
+           data['updated'] = updated.isoformat()
+        print data
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=data, verify=VERIFY_SSL)
+        self.verbose=True
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("List descriptions failed: {}". format(r.json()['message']))
+
+        return r.json()
+
 
 
     def enrol_from_image(self, subject_id, image_file, request=None):
