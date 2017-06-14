@@ -321,7 +321,6 @@ class VideoAIUser(object):
             self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-        
         if self.verbose:
             print_http_response(r)
        
@@ -345,6 +344,19 @@ class VideoAIUser(object):
             return True, r.content, r.headers
         else:
             return False, None, None
+
+class FaceLiveService(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(FaceLiveService, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                           verbose=verbose)
+        self.end_point = 'face_live_service'
+
+    def request(self):
+        pass
+
+    def apply(self):
+        pass
 
 class FaceLogImage(VideoAIUser):
 
