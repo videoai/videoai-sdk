@@ -404,23 +404,25 @@ class Recognition(VideoAIUser):
             raise Exception("Get description failed: {}". format(r.json()['message']))
 
         return r.json()
+
+
     def list_descriptions(self, 
                           page=1,
                           number_per_page=1000, 
                           updated=None,
-                          binary=False,
+                          base64=False,
                           request=None
     ):
         """
         List all the descriptions in the database
         :param updated: Time in UTC . 
-        :param binary: Get the binary data of the description
+        :param base64: Get base64 data of the description
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
 
         data = {
-            'binary': str(binary)
+            'base64': str(base64)
         }
         if updated is not None:
            data['updated'] = updated.isoformat()
