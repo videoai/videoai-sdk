@@ -9,6 +9,16 @@ import json
 
 SIGN_REQUEST = True
 
+VERSION = "1.3.41"
+
+
+class Version():
+    @staticmethod
+    def get_version():
+        return VERSION
+
+
+
 class Error(Exception):
     """Base-class for all exceptions raised by this module"""
 
