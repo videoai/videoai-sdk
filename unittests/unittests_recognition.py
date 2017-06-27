@@ -16,6 +16,30 @@ class TestEnrolSubjects(unittest.TestCase):
         self.face_log = FaceLog.create()
         self.recognition = Recognition.create()
 
+    def atest_list_deleted_subject(self):
+        print("List all deleted subjects")
+        data = {"start_timestamp": "1491989728"}
+        json_data = self.recognition.list_deleted_subjects(data)
+        self.assertIsNotNone(json_data)
+        self.assertEqual(json_data['status'], 'success')
+        subjects = json_data['data']['subjects']
+        print("json_data {}".format(json_data))
+        print("subjects {}".format(subjects))
+
+    def test_list_subject(self):
+        print "List all the subjects"
+
+        json_data = self.recognition.list_subjects()
+        self.assertIsNotNone(json_data)
+        self.assertEqual(json_data['status'], 'success')
+        subjects = json_data['data']['subjects']
+        print json.dumps(subjects, indent=4, sort_keys=True)
+
+        for subject in subjects:
+            print '{0} has id {1} and thumbnail {2}'.format(subject['name'], subject['subject_id'],
+                                                            subject['thumbnail'])
+            self.recognition.subject_thumbnail(subject['subject_id'])
+
     def test_face_log(self):
         '''
         This onlyt gets run if we do not have a valid sightings file
