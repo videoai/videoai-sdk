@@ -10,7 +10,7 @@ import json
 VERIFY_SSL = False
 SIGN_REQUEST = True
 
-VERSION = "1.3.41"
+VERSION = "0.9.9"
 
 
 class Version():
