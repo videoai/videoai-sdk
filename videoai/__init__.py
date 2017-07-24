@@ -812,9 +812,9 @@ class ImportSubjects(VideoAIUser):
 
         return json_data
 
-    def from_zip_file(self, input_file, wait_until_finished=True):
+    def from_zip_file(self, input_file, wait_until_finished=True, request=None):
 
-        json_data = self.request(input_file=input_file)
+        json_data = self.request(input_file=input_file, request=request)
 
         if not wait_until_finished:
             return json_data
