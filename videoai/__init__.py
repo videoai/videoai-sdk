@@ -100,10 +100,12 @@ def sign_request(url,
 
     params = {
         'oauth_version': '1.0',
-        'oauth_nonce': oauth_nonce,
-        'oauth_timestamp': oauth_timestamp,
-        'device_data': device_data
+        'oauth_nonce': str(oauth_nonce),
+        'oauth_timestamp': str(oauth_timestamp)
     }
+
+    if device_data is not None and device_data != "":
+        params['device_data'] = device_data
     if data is not None:
         params.update(data)
 
@@ -421,7 +423,6 @@ class FaceLogImage(VideoAIUser):
 
     def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='',
               wait_until_finished=True, local_output_dir='', location=None, request=None):
-
         json_data = self.request(image_file,
                                  min_size=min_size,
                                  recognition=recognition,

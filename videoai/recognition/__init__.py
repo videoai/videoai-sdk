@@ -51,6 +51,24 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+    def confirm_sighting_identity(self, sighting_id, subject_id, request=None):
+        url = '{}/sighting/{}/{}/true'.format(self.base_url, sighting_id, subject_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
+    def reject_sighting_identity(self, sighting_id, subject_id, request=None):
+        url = '{}/sighting/{}/{}/false'.format(self.base_url, sighting_id, subject_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
     def sighting_thumbnail(self, sighting_id, request=None):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/sighting', sighting_id)
         if SIGN_REQUEST:
@@ -63,6 +81,14 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+    def set_thumbnail(self, subject_id, sighting_id, request=None):
+        url = '{}/thumbnail/{}/{}'.format(self.base_url, subject_id, sighting_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="POST", request=request)
+        r = requests.post(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
 
     def sighting_acknowledge(self, sighting_id, request=None):
         url = '{}/sighting/{}/acknowledge'.format(self.base_url, sighting_id)
@@ -375,8 +401,29 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
-    
-    
+
+    def get_updated_subject_from_list_and_timestamp(self, subject_list, timestamp, request=None):
+
+        url = u"{}/{}/updated".format(self.base_url, self.subject)
+        print("url {}".format(url))
+        data = {'subject_list': json.dumps(subject_list), 'timestamp': timestamp}
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="POST", request=request)
+
+        r = requests.post(url, data=data, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Create subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
+
     
     
     def get_description(self,
