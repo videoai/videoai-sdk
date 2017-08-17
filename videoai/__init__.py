@@ -442,7 +442,6 @@ class FaceLogImage(VideoAIUser):
             return json_data
 
         if download:
-            self.download_file(task['results_image'], local_dir=local_output_dir)
             for sighting in task['sightings']:
                 self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
         return json_data
@@ -546,7 +545,6 @@ class FaceLog(VideoAIUser):
             return json_data
 
         if download:
-            self.download_file(task['results_video'], local_dir=local_output_dir)
             for sighting in task['sightings']:
                 self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
 
