@@ -327,9 +327,9 @@ class Recognition(VideoAIUser):
 
     def list_deleted_subjects(self, data={}, request=None):
         """
-                List all deleted subjects
-                :return:
-                """
+        List all deleted subjects
+        :return:
+        """
 
         url = u"{}/{}/deleted".format(self.base_url, self.subject)
         sep = "?"
@@ -354,7 +354,6 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
-
 
     def list_subjects(self, page=1,
                       number_per_page=1000, 

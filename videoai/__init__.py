@@ -54,6 +54,9 @@ def print_http_response(r):
         print "Date: {}".format(r.headers['date'])
     print json.dumps(r.json(), indent=4, sort_keys=True)
 
+
+from urlparse import urlsplit
+
 # This function will sign a request using, method, url (with parameters), data (form parameters)
 #       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
 #       if oauth_nonce and oauth_timestamp are None they will be generated
@@ -124,7 +127,12 @@ def sign_request(url,
     #print("----- URL {}".format(url))
     #print("----- method {}".format(method))
 
+    scheme, netloc, path, query, fragment = urlsplit(url)
+
     req = oauth.Request(method=method.upper(), url=url, parameters=params)
+    # this is a way to avoid checking the base url.
+    # we force the normalized_url to only contains endpoint
+    req.normalized_url = path
 
     # Sign the request.
     signature_method = oauth.SignatureMethod_HMAC_SHA1()
