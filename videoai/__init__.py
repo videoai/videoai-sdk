@@ -397,16 +397,18 @@ class FaceLogImage(VideoAIUser):
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
-        files = {'image': open("{0}".format(image_file))}
+        files = {'image': open("{0}".format(image_file), mode='rb')}
 
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
+
             r = requests.post(url,
                               headers=self.header,
                               files=files,
                               data=data,
-                              allow_redirects=True, verify=VERIFY_SSL)
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
 
             json_data = r.json()
 
@@ -484,7 +486,7 @@ class FaceLog(VideoAIUser):
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
-        files = {'video': open("{0}".format(video_file))}
+        files = {'video': open("{0}".format(video_file), mode='rb')}
         try:
 
             if SIGN_REQUEST:
@@ -568,14 +570,14 @@ class FaceAuthenticate(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
         files = {
-            'gallery': open('{}'.format(gallery))
+            'gallery': open('{}'.format(gallery), mode='rb')
         }
 
         if probe1:
-            files['probe1'] = open('{}'.format(probe1))
+            files['probe1'] = open('{}'.format(probe1), mode='rb')
 
         if probe2:
-            files['probe2'] = open('{}'.format(probe2))
+            files['probe2'] = open('{}'.format(probe2), mode='rb')
 
         if len(files) < 2:
             raise FailedAPICall('Only 1 image file specified')
@@ -791,7 +793,7 @@ class ImportSubjects(VideoAIUser):
                 self.sign_request(url, method="POST", request=request)
        
 
-            files = {'input_file': open("{0}".format(input_file))}
+            files = {'input_file': open("{0}".format(input_file), mode='rb')}
             r = requests.post(url,
                               headers=self.header,
                               files=files,
