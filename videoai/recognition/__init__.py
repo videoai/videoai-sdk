@@ -470,15 +470,15 @@ class Recognition(VideoAIUser):
         data = {
             'base64': str(base64)
         }
+
         if updated is not None:
            data['updated'] = updated.isoformat()
-        print data
 
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, data=data, verify=VERIFY_SSL)
-        self.verbose=True
+        
         if self.verbose:
             print print_http_response(r)
 
