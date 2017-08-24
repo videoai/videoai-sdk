@@ -336,7 +336,7 @@ class VideoAIUser(object):
         :return:
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-        print("URL :{}".format(url))
+        
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
@@ -508,7 +508,6 @@ class FaceLog(VideoAIUser):
                               verify=VERIFY_SSL)
 
             json_data = r.json()
-            print json.dumps(json_data, indent=4)
 
             if self.verbose:
                 print print_http_response(r)
