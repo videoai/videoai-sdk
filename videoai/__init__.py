@@ -132,7 +132,7 @@ def sign_request(url,
     req = oauth.Request(method=method.upper(), url=url, parameters=params)
     # this is a way to avoid checking the base url.
     # we force the normalized_url to only contains endpoint
-    #req.normalized_url = path
+    req.normalized_url = path
 
     # Sign the request.
     signature_method = oauth.SignatureMethod_HMAC_SHA1()
