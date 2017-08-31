@@ -49,7 +49,8 @@ def print_http_response(r):
     print "HTTP/1.0 {} OK".format(r.status_code)
     print "Content-Type: {}".format(r.headers['content-type'])
     print "Content-Length: {}".format(r.headers['content-length'])
-    print "Server: {}".format(r.headers['server'])
+    if 'server' in r.headers:
+        print "Server: {}".format(r.headers['server'])
     if 'date' in r.headers:
         print "Date: {}".format(r.headers['date'])
     print json.dumps(r.json(), indent=4, sort_keys=True)
@@ -132,7 +133,7 @@ def sign_request(url,
     req = oauth.Request(method=method.upper(), url=url, parameters=params)
     # this is a way to avoid checking the base url.
     # we force the normalized_url to only contains endpoint
-    req.normalized_url = path
+    # req.normalized_url = path
 
     # Sign the request.
     signature_method = oauth.SignatureMethod_HMAC_SHA1()
@@ -806,7 +807,6 @@ class ImportSubjects(VideoAIUser):
                               files=files,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
-            print_http_response(r)
             json_data = r.json()
         except:
             raise FailedAPICall('ImportSubjects')
@@ -849,7 +849,7 @@ class ExportSubjects(VideoAIUser):
         print 'Requested export subjects'
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        
+        print url 
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", request=request)
@@ -858,7 +858,7 @@ class ExportSubjects(VideoAIUser):
                               headers=self.header,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
-            print_http_response(r)
+
             json_data = r.json()
         except:
             raise FailedAPICall('ExportSubjects')

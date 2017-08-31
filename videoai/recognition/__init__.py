@@ -29,13 +29,14 @@ class Recognition(VideoAIUser):
 
     def subject_thumbnail(self, subject_id, request=None):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
+
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
-
+		
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
-        if self.verbose:
-            print print_http_response(r)
+        #if True:
+        #    print print_http_response(r)
 
         if r.status_code == 200:
             return r.content
