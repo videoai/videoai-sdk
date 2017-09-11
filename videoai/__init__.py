@@ -872,9 +872,9 @@ class ExportSubjects(VideoAIUser):
 
         return json_data
 
-    def export(self, wait_until_finished=True, download=True):
+    def export(self, wait_until_finished=True, download=True, request=None):
 
-        json_data = self.request()
+        json_data = self.request(request=request)
 
         if not wait_until_finished:
             return json_data
@@ -890,5 +890,64 @@ class ExportSubjects(VideoAIUser):
         if download:
             self.download_file(task['output_file'])
 
-        return json_data 
+        return json_data
+
+# ExportLogs class
+# Export all tasks and action
+class ExportLogs(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(ExportLogs, self).__init__(token=token, host=host, client_id=client_id,
+                                             client_secret=client_secret,
+                                             verbose=verbose)
+        self.end_point = 'export_logs'
+
+    def request(self, format='csv', request=None):
+
+        print 'Requested export Logs'
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        print url
+        data = {'format': format}
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+        except:
+            raise FailedAPICall('ExportLogs')
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("ExportLogs request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def export(self, wait_until_finished=True, download=True, format='cvs', request=None):
+
+        json_data = self.request(format=format, request=request)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+
+        if not task['success']:
+            print 'Failed ExportLogs: {0}'.format(task['message'])
+            return task
+
+        if download:
+            self.download_file(task['output_file'])
+
+        return json_data
 
