@@ -92,6 +92,9 @@ def sign_request(url,
         lng = None
         try:
             ip_addr = request.remote_addr
+            # Convert IPv6 to IPv4 notation
+            if ip_addr[:7] == "::ffff:":
+                ip_addr = ip_addr[7:]
             send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
             r = requests.get(send_url)
             j = json.loads(r.text)
