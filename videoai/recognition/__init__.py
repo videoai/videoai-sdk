@@ -405,7 +405,7 @@ class Recognition(VideoAIUser):
     def get_updated_subject_from_list_and_timestamp(self, subject_list, timestamp, request=None):
 
         url = u"{}/{}/updated".format(self.base_url, self.subject)
-        print("url {}".format(url))
+        #print("url {}".format(url))
         data = {'subject_list': json.dumps(subject_list), 'timestamp': timestamp}
 
         if SIGN_REQUEST:

@@ -318,6 +318,22 @@ class VideoAIUser(object):
             print_http_response(r)
         return r.json()
 
+    def import_tasks_report(self, job_id, page=1, number_per_page=3, request=None):
+        '''
+        Get a list of all tasks or if job_id provided of all subtask of job_id
+        :return:
+        '''
+        url = "{0}/subtasks/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print_http_response(r)
+
+        return r.json()
+
     def tasks(self, page=1, number_per_page=3, request=None):
         '''
         Get a list of all tasks
@@ -325,8 +341,9 @@ class VideoAIUser(object):
         '''
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
 
+
         if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET", request=request)
+            self.sign_request(url, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
@@ -349,6 +366,25 @@ class VideoAIUser(object):
             print_http_response(r)
        
         return r.json()
+
+    def source_file(self, job_id, request=None):
+        '''
+        Get source file of a job from a job_id
+        :return:
+        '''
+        url = "{}/source_file/{}".format(self.base_url, job_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.status_code == 200:
+            return True, r.content, r.headers
+        else:
+            return False, None, None
 
     def result_file(self, day_count, job_id, filename, request=None):
         '''
@@ -721,7 +757,7 @@ class BuildImage(VideoAIUser):
         if sighting_id is not None:
             data = {'sighting_id': sighting_id}
         else:
-            data = {'face_log_image_id': face_log_image_id}
+            data = {'face_log_job_id': face_log_image_id}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
         
@@ -783,6 +819,63 @@ class BuildImage(VideoAIUser):
         return task
 
 
+class ImportData(VideoAIUser):
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(ImportData, self).__init__(token=token, host=host, client_id=client_id,
+                                             client_secret=client_secret,
+                                             verbose=verbose)
+        self.end_point = 'import_data'
+
+    def request(self, input_file, data=None, request=None):
+
+        #print 'Requested import data'
+
+        if not os.path.isfile(input_file):
+            raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, method="POST", data=data, request=request)
+
+            files = {'input_file': open("{0}".format(input_file), mode='rb')}
+            r = requests.post(url,
+                              headers=self.header,
+                              files=files,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('ImportData')
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("ImportData request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def from_zipped_csv_files(self, input_file, data=None, wait_until_finished=True, request=None):
+        #print 'Import data from zipped csv files'
+        json_data = self.request(input_file=input_file, data=data, request=request)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed ImportData: {0}'.format(task['message'])
+            return task
+
+        return json_data
+
+
+
 class ImportSubjects(VideoAIUser):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
@@ -798,11 +891,10 @@ class ImportSubjects(VideoAIUser):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        
+
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", request=request)
-       
 
             files = {'input_file': open("{0}".format(input_file), mode='rb')}
             r = requests.post(url,
