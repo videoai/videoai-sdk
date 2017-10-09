@@ -341,11 +341,11 @@ class VideoAIUser(object):
         '''
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
 
-
         if SIGN_REQUEST:
             self.sign_request(url, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+
         if self.verbose:
             print_http_response(r)
 
