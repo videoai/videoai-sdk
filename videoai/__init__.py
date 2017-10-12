@@ -148,7 +148,6 @@ def sign_request(url,
 
     return header
 
-
 class VideoAIUser(object):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
@@ -194,6 +193,7 @@ class VideoAIUser(object):
             client_id = get_parameter(param=client_id, name='client_id', parser=parser)
             client_secret = get_parameter(param=client_secret, name='client_secret', parser=parser)
             authentication_server = get_parameter(param=authentication_server, name='authentication_server', parser=parser)
+
         except:
             raise
 
@@ -236,6 +236,72 @@ class VideoAIUser(object):
                                    oauth_nonce=oauth_nonce,
                                    oauth_timestamp=oauth_timestamp,
                                    request=request)
+
+    def initialize_unittest(self, request=None):
+        '''
+        Initialize unittest on authentication database
+        :return:
+        '''
+        # Need some information from the key-file
+        key_file = ''
+        if not key_file:
+            home = expanduser("~")
+            key_file = os.path.join(home, '.videoai')
+        parser = ConfigParser()
+        parser.read(key_file)
+
+        try:
+            client_id = get_parameter(param=None, name='client_id', parser=parser)
+            client_secret = get_parameter(param=None, name='client_secret', parser=parser)
+            authentication_server = get_parameter(param=None, name='authentication_server',
+                                                  parser=parser)
+        except:
+            raise
+
+        url = '{}/auth/initialize_unittest'.format(authentication_server)
+        self.sign_request(url=url, data=None, method='POST', request=request)
+        response = requests.post(url, None, headers=self.header, verify=VERIFY_SSL)
+        json_response = json.loads(response.text)
+        if self.verbose:
+            print print_http_response(response)
+
+        if response.status_code == 200:
+            return True, response.content, response.headers
+        else:
+            return False, None, None
+
+    def finalize_unittest(self, request=None):
+        '''
+        Initialize unittest on authentication database
+        :return:
+        '''
+        # Need some information from the key-file
+        key_file = ''
+        if not key_file:
+            home = expanduser("~")
+            key_file = os.path.join(home, '.videoai')
+        parser = ConfigParser()
+        parser.read(key_file)
+
+        try:
+            client_id = get_parameter(param=None, name='client_id', parser=parser)
+            client_secret = get_parameter(param=None, name='client_secret', parser=parser)
+            authentication_server = get_parameter(param=None, name='authentication_server',
+                                                  parser=parser)
+        except:
+            raise
+
+        url = '{}/auth/finalize_unittest'.format(authentication_server)
+        self.sign_request(url=url, data=None, method='POST', request=request)
+        response = requests.post(url, None, headers=self.header, verify=VERIFY_SSL)
+        json_response = json.loads(response.text)
+        if self.verbose:
+            print print_http_response(response)
+
+        if response.status_code == 200:
+            return True, response.content, response.headers
+        else:
+            return False, None, None
 
     def wait(self, response, request=None):
 
@@ -404,6 +470,8 @@ class VideoAIUser(object):
             return True, r.content, r.headers
         else:
             return False, None, None
+
+
 
 class FaceLiveService(VideoAIUser):
 
