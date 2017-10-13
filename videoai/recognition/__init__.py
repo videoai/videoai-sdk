@@ -3,11 +3,13 @@
 
 __author__ = 'kieron'
 
-from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall, VERIFY_SSL
+from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall, VERIFY_SSL, get_parameter
 import json
 import requests
 import datetime
-
+from os.path import expanduser
+from configparser import ConfigParser
+import os
 
 # get rid of annoying message about using unverified certificates
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -566,7 +568,6 @@ class Recognition(VideoAIUser):
         return r.json()
 
 
-
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False, request=None):
         url = "{0}/{1}".format(self.base_url, self.watchlist)
@@ -611,11 +612,78 @@ class Recognition(VideoAIUser):
         watchlist_ids = [x['id'] for x in watchlists]
         return watchlist_ids
 
+    def create_watchlist_for_unittest(self, watchlist=None, request=None):
+        '''
+        Initialize unittest on analytics database -> watchlist
+        :return:
+        '''
+        watchlist_list = self.list_watchlists()
+        if watchlist_list['status'] == 'success':
+            watchlist_list = watchlist_list['data']['watchlists']
+        watchlist_name_list = []
+        for w in watchlist_list:
+            watchlist_name_list.append(w['name'])
 
+        response = None
+        need_to_create = False
+        for w in watchlist:
+            if w['name'] not in watchlist_name_list:
+                need_to_create = True
+                url = '{}/watchlist'.format(self.base_url)
+                self.sign_request(url=url, data=w, method='POST', request=request)
+                response = requests.post(url, w, headers=self.header, verify=VERIFY_SSL)
+                json_response = json.loads(response.text)
+        if self.verbose:
+            print print_http_response(response)
 
+        if not need_to_create:
+            return True, json.dumps({'status': 'success'}), None
+        if response and response.status_code == 200:
+            return True, response.content, response.headers
+        else:
+            return False, None, None
 
+    def assign_watchlist_to_user_for_unittest(self, email, watchlist=None, request=None):
+        '''
+        Initialize unittest on authentication database
+        :return:
+        '''
 
+        # Need some information from the key-file
+        key_file = ''
+        if not key_file:
+            home = expanduser("~")
+            key_file = os.path.join(home, '.videoai')
+        parser = ConfigParser()
+        parser.read(key_file)
 
+        try:
+            authentication_server = get_parameter(param=None, name='authentication_server',
+                                                  parser=parser)
+        except:
+            raise
+
+        watchlist_list = self.list_watchlists()
+        if watchlist_list['status'] == 'success':
+            watchlist_list = watchlist_list['data']['watchlists']
+
+        built_watchlist = []
+        for w in watchlist:
+            name = w['name']
+            built_watchlist.append((item for item in watchlist_list if item["name"] == name).next()['id'])
+
+        data = {'email': email, 'watchlist': json.dumps(built_watchlist)}
+        url = '{}/auth/assign_watchlist_to_user_for_unittest'.format(authentication_server)
+        self.sign_request(url=url, data=data, method='POST', request=request)
+        response = requests.post(url, data, headers=self.header, verify=VERIFY_SSL)
+        json_response = json.loads(response.text)
+        if self.verbose:
+            print print_http_response(response)
+
+        if response.status_code == 200:
+            return True, response.content, response.headers
+        else:
+            return False, None, None
 
 
 

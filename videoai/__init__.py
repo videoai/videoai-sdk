@@ -235,7 +235,7 @@ class VideoAIUser(object):
                                    oauth_timestamp=oauth_timestamp,
                                    request=request)
 
-    def initialize_unittest(self, request=None):
+    def create_users_for_unittest(self, users, request=None):
         '''
         Initialize unittest on authentication database
         :return:
@@ -249,17 +249,15 @@ class VideoAIUser(object):
         parser.read(key_file)
 
         try:
-            client_id = get_parameter(param=None, name='client_id', parser=parser)
-            client_secret = get_parameter(param=None, name='client_secret', parser=parser)
             authentication_server = get_parameter(param=None, name='authentication_server',
                                                   parser=parser)
         except:
             raise
-
+        data = {'users': json.dumps(users)}
         url = '{}/auth/initialize_unittest'.format(authentication_server)
-        self.sign_request(url=url, data=None, method='POST', request=request)
-        response = requests.post(url, None, headers=self.header, verify=VERIFY_SSL)
-        json_response = json.loads(response.text)
+        self.sign_request(url=url, data=data, method='POST', request=request)
+        response = requests.post(url, data, headers=self.header, verify=VERIFY_SSL)
+
         if self.verbose:
             print print_http_response(response)
 
