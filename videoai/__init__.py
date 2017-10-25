@@ -302,9 +302,12 @@ class VideoAIUser(object):
 
         task = response['task']
 
-        # now we need to add client_id in the url
-        # url = "{0}/{1}/{2}?client_id={3}".format(self.base_url, self.end_point, task['job_id'], self.client_id)
-        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, task['job_id'])
+        # endpoint is selected by the task analytics itself
+        # using face_log_stream we are creating sub task that are face_log_image.
+        # using class endpoint is not enough,
+        # as wait for apply in face_log_stream is not for waiting on the face_log_stream task
+        # but on the subtask on face_log_image
+        url = "{0}/{1}/{2}".format(self.base_url, task['analytic'], task['job_id'])
 
         if task['complete']:
             return task
@@ -379,12 +382,14 @@ class VideoAIUser(object):
             print_http_response(r)
         return r.json()
 
-    def import_tasks_report(self, job_id, page=1, number_per_page=3, request=None):
+    def import_tasks_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
         '''
         Get a list of all tasks or if job_id provided of all subtask of job_id
         :return:
         '''
+
         url = "{0}/subtasks/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
+        url += "?ignored={}".format(show_ignored)
 
         if SIGN_REQUEST:
             self.sign_request(url, method="GET", request=request)
@@ -418,7 +423,7 @@ class VideoAIUser(object):
         :return:
         '''
         url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-        
+
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
@@ -467,7 +472,6 @@ class VideoAIUser(object):
             return False, None, None
 
 
-
 class FaceLiveService(VideoAIUser):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
@@ -480,6 +484,175 @@ class FaceLiveService(VideoAIUser):
 
     def apply(self):
         pass
+
+
+class FaceLogStream(VideoAIUser):
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(FaceLogStream, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                           verbose=verbose)
+        self.end_point = 'face_log_stream'
+
+    def create_stream(self, request=None):
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        data = None
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Face Log Stream Create request failed: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call FaceLogStream:create")
+
+        return json_data
+
+    def get_result(self, job_id, request=None):
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=None, method="GET", request=request)
+
+            r = requests.get(url,
+                              headers=self.header,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Face Log Stream Get request failed: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call FaceLogStream:get")
+
+        return json_data
+
+    def close_stream(self, job_id, request=None):
+        url = "{0}/{1}/{2}/close".format(self.base_url, self.end_point, job_id)
+
+        data = None
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Face Log Stream Finalize request failed: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call FaceLogStream:finalize")
+
+        return json_data
+
+    def request(self, image_file, job_id=None, min_size=80, recognition=0, compare_threshold=0.6, top_n=1,
+                subject_id='', location=None, request=None):
+        '''
+        If job_id is None
+            that means we are creating the stream
+        else
+            that means we are adding images to the stream
+        '''
+        #file_size = os.path.getsize(image_file) / 1000000.0
+
+        data = {
+                'min_size': min_size,
+                'recognition': recognition,
+                'compare_threshold': compare_threshold,
+                'top_n': top_n
+               }
+
+        if location is not None:
+            data['location'] = location
+
+        # are we requested a verification?
+        if subject_id is not None:
+            data['subject_id'] = subject_id
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        if job_id is not None:
+            url += "/" + job_id
+
+        files = {'image': open("{0}".format(image_file), mode='rb')}
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              files=files,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Face Log Stream request failed: {}". format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call FaceLogStream")
+
+        return json_data
+
+    def apply(self, image_file, job_id=None, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='',
+              wait_until_finished=True, local_output_dir='', location=None, request=None):
+        json_data = self.request(image_file,
+                                 job_id=job_id,
+                                 min_size=min_size,
+                                 recognition=recognition,
+                                 compare_threshold=compare_threshold,
+                                 top_n=top_n,
+                                 subject_id=subject_id,
+                                 location=location,
+                                 request=request)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+        task = json_data['task']
+        if not task['success']:
+            print 'Failed FaceLogImage: {0}'.format(task['message'])
+            return json_data
+
+        if download:
+            for sighting in task['sightings']:
+                self.download_file(sighting['thumbnail'], local_dir=local_output_dir)
+        return json_data
+
 
 class FaceLogImage(VideoAIUser):
 
@@ -549,6 +722,7 @@ class FaceLogImage(VideoAIUser):
             return json_data
 
         json_data = self.wait(json_data)
+
         task = json_data['task']
         if not task['success']:
             print 'Failed FaceLogImage: {0}'.format(task['message'])
@@ -707,7 +881,6 @@ class FaceAuthenticate(VideoAIUser):
             raise FailedAPICall("Face Authenticate request failed: {}". format(r.json()['message']))
 
         return json_data
-
 
     def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True, request=None):
 
