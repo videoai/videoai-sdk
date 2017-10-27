@@ -389,7 +389,7 @@ class VideoAIUser(object):
         '''
 
         url = "{0}/subtasks/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
-        url += "?ignored={}".format(show_ignored)
+        url += "?show_ignored={}".format(show_ignored)
 
         if SIGN_REQUEST:
             self.sign_request(url, method="GET", request=request)
