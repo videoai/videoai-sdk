@@ -400,6 +400,25 @@ class VideoAIUser(object):
 
         return r.json()
 
+    def import_subjects_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
+        '''
+        Get a list of all tasks or if job_id provided of all subtask of job_id
+        :return:
+        '''
+
+        url = "{0}/import_subjects/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
+        url += "?show_ignored={}".format(show_ignored)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        print("R {}".format(r.json()))
+        if self.verbose:
+            print_http_response(r)
+
+        return r.json()
+
     def tasks(self, page=1, number_per_page=3, request=None):
         '''
         Get a list of all tasks
