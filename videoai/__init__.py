@@ -382,92 +382,6 @@ class VideoAIUser(object):
             print_http_response(r)
         return r.json()
 
-    def export_filtered_subjects(self, data, request=None):
-        url = "{}/export_filtered_subjects".format(self.base_url)
-
-        print("url {} DATA {}".format(url, data))
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST", request=request)
-
-            r = requests.post(url,
-                              headers=self.header,
-                              data=data,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
-
-            json_data = r.json()
-
-            if self.verbose:
-                print print_http_response(r)
-
-            if json_data['status'] != 'success':
-                raise FailedAPICall("Error while exporting subjects: {}".format(json_data['message']))
-
-        except:
-            raise FailedAPICall("Failed to call export_checked_subjects")
-
-        return json_data
-
-    def export_checked_subjects(self, job_id, targets="", request=None):
-        print("IN EXPORT CHECKED SUBJECTS")
-        url = "{}/export_checked_subjects/{}".format(self.base_url, job_id)
-
-        data = {'targets': targets}
-        print("url {} DATA {}".format(url, data))
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST", request=request)
-
-            r = requests.post(url,
-                              headers=self.header,
-                              data=data,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
-
-            json_data = r.json()
-
-            if self.verbose:
-                print print_http_response(r)
-
-            if json_data['status'] != 'success':
-                raise FailedAPICall("Error while exporting subjects: {}".format(json_data['message']))
-
-        except:
-            raise FailedAPICall("Failed to call export_checked_subjects")
-
-        return json_data
-
-
-    def accept_waiting_tasks(self, job_id, targets="", request=None):
-        print("IN WAITING TASKS")
-        url = "{}/accept_waiting_tasks/{}".format(self.base_url, job_id)
-
-        data = {'targets': targets}
-        print("url {} DATA {}".format(url, data))
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST", request=request)
-
-            r = requests.post(url,
-                              headers=self.header,
-                              data=data,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
-
-            json_data = r.json()
-
-            if self.verbose:
-                print print_http_response(r)
-
-            if json_data['status'] != 'success':
-                raise FailedAPICall("Error while accepting waiting tasks: {}".format(json_data['message']))
-
-        except:
-            raise FailedAPICall("Failed to call accept_waiting_tasks")
-
-        return json_data
-
     def import_tasks_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
         '''
         Get a list of all tasks or if job_id provided of all subtask of job_id
@@ -481,25 +395,6 @@ class VideoAIUser(object):
             self.sign_request(url, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-        if self.verbose:
-            print_http_response(r)
-
-        return r.json()
-
-    def import_subjects_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
-        '''
-        Get a list of all tasks or if job_id provided of all subtask of job_id
-        :return:
-        '''
-
-        url = "{0}/import_subjects/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
-        url += "?show_ignored={}".format(show_ignored)
-
-        if SIGN_REQUEST:
-            self.sign_request(url, method="GET", request=request)
-
-        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-        print("R {}".format(r.json()))
         if self.verbose:
             print_http_response(r)
 
@@ -1272,6 +1167,53 @@ class ImportSubjects(VideoAIUser):
 
         return json_data 
 
+    def accept_waiting_tasks(self, job_id, targets="", request=None):
+        print("IN WAITING TASKS")
+        url = "{}/accept_waiting_tasks/{}".format(self.base_url, job_id)
+
+        data = {'targets': targets}
+        print("url {} DATA {}".format(url, data))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while accepting waiting tasks: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call accept_waiting_tasks")
+
+        return json_data
+
+    def import_subjects_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
+        '''
+        Get a list of all tasks or if job_id provided of all subtask of job_id
+        :return:
+        '''
+
+        url = "{0}/import_subjects/{1}/{2}/{3}".format(self.base_url, job_id, page, number_per_page)
+        url += "?show_ignored={}".format(show_ignored)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        print("R {}".format(r.json()))
+        if self.verbose:
+            print_http_response(r)
+
+        return r.json()
 
 class ExportSubjects(VideoAIUser):
 
@@ -1325,6 +1267,62 @@ class ExportSubjects(VideoAIUser):
         
         if download:
             self.download_file(task['output_file'])
+
+        return json_data
+
+    def export_filtered_subjects(self, data, request=None):
+        url = "{}/export_filtered_subjects".format(self.base_url)
+
+        #print("url {} DATA {}".format(url, data))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while exporting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call export_checked_subjects")
+
+        return json_data
+
+    def export_checked_subjects(self, job_id, targets="", request=None):
+        #print("IN EXPORT CHECKED SUBJECTS")
+        url = "{}/export_checked_subjects/{}".format(self.base_url, job_id)
+
+        data = {'targets': targets}
+        print("url {} DATA {}".format(url, data))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while exporting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call export_checked_subjects")
 
         return json_data
 
