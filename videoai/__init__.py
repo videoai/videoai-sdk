@@ -12,6 +12,7 @@ SIGN_REQUEST = True
 
 VERSION = "1.3.41"
 
+LOCALISE_IP_ADDRESS = False
 
 class Version():
     @staticmethod
@@ -93,13 +94,13 @@ def sign_request(url,
             # Convert IPv6 to IPv4 notation
             if ip_addr[:7] == "::ffff:":
                 ip_addr = ip_addr[7:]
-            send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
-            r = requests.get(send_url)
-            j = json.loads(r.text)
-            lat = j['latitude']
-            lng = j['longitude']
-            device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr,
-                                                                                 lat, lng)
+            if LOCALISE_IP_ADDRESS:
+                send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
+                r = requests.get(send_url)
+                j = json.loads(r.text)
+                lat = j['latitude']
+                lng = j['longitude']
+            device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr, lat, lng)
         except:
             print("no ip or no location available")
 
@@ -380,7 +381,36 @@ class VideoAIUser(object):
             print_http_response(r)
         return r.json()
 
-    def import_tasks_report(self, job_id, page=1, number_per_page=3, request=None):
+    def accept_waiting_tasks(self, job_id, targets="", request=None):
+        print("IN WAITING TASKS")
+        url = "{}/accept_waiting_tasks/{}".format(self.base_url, job_id)
+
+        data = {'targets': targets}
+        print("url {} DATA {}".format(url, data))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while accepting waiting tasks: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call accept_waiting_tasks")
+
+        return json_data
+
+    def import_tasks_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
         '''
         Get a list of all tasks or if job_id provided of all subtask of job_id
         :return:
