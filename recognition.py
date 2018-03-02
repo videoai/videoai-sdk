@@ -16,6 +16,7 @@ parser.add_argument('--delete-subjects', dest='delete_subjects', action='store_t
 parser.add_argument('--delete-subject', dest='delete_subject', help='delete a subject with this id')
 parser.add_argument('--add-sighting', dest='add_sighting', help='Add this sighting to a subject with an id')
 parser.add_argument('--subject-id', dest='subject_id', help='A subject id')
+parser.add_argument('--subject-thumbnail', dest='subject_thumbnail', help='Get a thumbnail of the subject id')
 parser.add_argument('--subjects', dest='subjects', action='store_true', help='List all subjects in database.')
 parser.add_argument('--gender', dest='gender', default='Unknown', help='Gender of subject.')
 parser.add_argument('--tag', dest='tag', default='Unknown', help='A tag name to give a subject.')
@@ -145,4 +146,17 @@ if args.add_sighting and args.subject_id:
         recognition.add_sighting_to_subject(args.add_sighting, args.subject_id)
     except Exception as err:
         print('Trouble adding sighting to subject', err)
+
+# Get a thumbnaikl of a subject 
+if args.subject_thumbnail:
+    print 'Get thumbnail of a subject'.format(args.subject_thumbnail)
+    try:
+        content = recognition.subject_thumbnail(args.subject_thumbnail)
+        print 'saving thumbnail to: subject_{}.jpg'.format(args.subject_thumbnail)	
+        fh = open('subject_{}.jpg'.format(args.subject_thumbnail), 'wb')
+        fh.write(content)
+
+    except Exception as err:
+        print('Trouble getting thumbnail of subject', err)
+
 

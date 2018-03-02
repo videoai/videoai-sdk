@@ -10,8 +10,9 @@ import json
 VERIFY_SSL = False
 SIGN_REQUEST = True
 
-VERSION = "0.9.9"
+VERSION = "1.3.41"
 
+LOCALISE_IP_ADDRESS = False
 
 class Version():
     @staticmethod
@@ -93,11 +94,12 @@ def sign_request(url,
             # Convert IPv6 to IPv4 notation
             if ip_addr[:7] == "::ffff:":
                 ip_addr = ip_addr[7:]
-            send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
-            r = requests.get(send_url)
-            j = json.loads(r.text)
-            lat = j['latitude']
-            lng = j['longitude']
+            if LOCALISE_IP_ADDRESS:
+                send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
+                r = requests.get(send_url)
+                j = json.loads(r.text)
+                lat = j['latitude']
+                lng = j['longitude']
             device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr, lat, lng)
         except:
             print("no ip or no location available")
@@ -381,7 +383,7 @@ class VideoAIUser(object):
         if self.verbose:
             print_http_response(r)
         return r.json()
-
+    
     def import_tasks_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
         '''
         Get a list of all tasks or if job_id provided of all subtask of job_id
@@ -1227,7 +1229,7 @@ class ExportSubjects(VideoAIUser):
         print 'Requested export subjects'
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        print url 
+        
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", request=request)
