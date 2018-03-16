@@ -377,7 +377,6 @@ class Recognition(VideoAIUser):
 
         # if we have a valid watchlist then we try and use it
         if watchlist:
-            print 'appending {}'.format(watchlist)
             wl_ids.append(unicode(watchlist))
 
         if watchlist_data:
@@ -533,7 +532,6 @@ class Recognition(VideoAIUser):
                     url += sep + v + "=" + unicode(data[v])
                     sep = "&"
 
-        print(u"URL {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
