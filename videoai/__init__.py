@@ -7,6 +7,27 @@ from os.path import expanduser
 from configparser import ConfigParser
 import json
 
+#import logging
+#logger = logging.getLogger(__name__)
+
+#import logging.config
+#config_file = '/home/anegri/__Development__/VideoAI.net/sdk/videoai/logging_config.ini'
+#logging.config.fileConfig(config_file)
+
+#from logger import console_logger, file_logger
+#if False:
+#    console_logger.debug('debug message')
+#    console_logger.info('info message')
+#    console_logger.warn('warn message')
+#    console_logger.error('error message')
+#    console_logger.critical('critical message')
+
+#    file_logger.debug('debug message in File')
+#    file_logger.info('info message in File')
+#    file_logger.warn('warn message in File')
+#    file_logger.error('error message in File')
+#    file_logger.critical('critical message in File')
+
 VERIFY_SSL = False
 SIGN_REQUEST = True
 
@@ -14,22 +35,28 @@ VERSION = "1.3.41"
 
 LOCALISE_IP_ADDRESS = False
 
+
 class Version():
     @staticmethod
     def get_version():
         return VERSION
 
+
 class Error(Exception):
     """Base-class for all exceptions raised by this module"""
+
 
 class InvalidKeyFile(Error):
     """Invalid key-file"""
 
+
 class FailedAPICall(Error):
     """Failed to call an API function"""
 
+
 class AuthenticationError(Error):
     """Failed to be authenticated"""
+
 
 def get_parameter(param, name, parser):
     section = 'videoai.net'
@@ -38,6 +65,7 @@ def get_parameter(param, name, parser):
             raise InvalidKeyFile('Missing {} parameter.'.format(name))
         return parser.get(section, name)
     return param
+
 
 def print_http_response(r):
     '''
@@ -57,6 +85,7 @@ def print_http_response(r):
 
 from urlparse import urlsplit
 
+
 # This function will sign a request using, method, url (with parameters), data (form parameters)
 #       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
 #       if oauth_nonce and oauth_timestamp are None they will be generated
@@ -70,7 +99,7 @@ def sign_request(url,
                  oauth_nonce=None,
                  oauth_timestamp=None,
                  request=None):
-
+    #console_logger.info("in sign !!!!@!@!@!@!@!")
     # Set the base oauth_* parameters along with any other parameters required
     # for the API call.
     # url = "{0}/{1}".format(self.base_url, self.end_point)

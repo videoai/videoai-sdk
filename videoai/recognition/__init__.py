@@ -40,7 +40,7 @@ class Recognition(VideoAIUser):
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
-		
+
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
         #if True:
