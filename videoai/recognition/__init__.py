@@ -4,12 +4,15 @@
 __author__ = 'kieron'
 
 from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall, VERIFY_SSL, get_parameter
+
 import json
 import requests
 import datetime
 from os.path import expanduser
 from configparser import ConfigParser
 import os
+
+#from ..logger import console_logger, file_logger
 
 # get rid of annoying message about using unverified certificates
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -56,6 +59,16 @@ class Recognition(VideoAIUser):
         if self.verbose:
             print print_http_response(r)
         return r.content
+
+    def hide_sighting(self, sighting_id, request=None):
+        url = '{}/hide/{}'.format(self.base_url, sighting_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
 
     def confirm_sighting_identity(self, sighting_id, subject_id, request=None):
         url = '{}/sighting/{}/{}/true'.format(self.base_url, sighting_id, subject_id)
@@ -571,6 +584,8 @@ class Recognition(VideoAIUser):
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False, request=None):
         url = "{0}/{1}".format(self.base_url, self.watchlist)
+        #print("---->>+++ THE url {} / {}".format(url, console_logger))
+        #console_logger.info("--dsadsadsadsa-->>+++ THE url {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
