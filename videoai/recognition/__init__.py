@@ -33,7 +33,7 @@ class Recognition(VideoAIUser):
         self.description = 'description'
         self.sighting = 'sighting'
         self.watchlist = 'watchlist'
-        self.watchlisted = 'watchlisted'
+        self.subject_watchlist = 'subject_watchlist'
 
     def subject_thumbnail(self, subject_id, request=None):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
