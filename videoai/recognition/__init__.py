@@ -200,7 +200,6 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-
     def edit_subject_watchlist(self, subject_id, watchlist_ids=[], watchlist_ids_to_add='',
                                watchlist_ids_to_remove='', request=None):
         """
@@ -507,15 +506,30 @@ class Recognition(VideoAIUser):
 
         return r.json()
 
-
-
     def enrol_from_image(self, subject_id, image_file, request=None):
         pass
+
+    # link sighting to subject without adding the description
+    def link_sighting_to_subject(self, sighting_id, subject_id, request):
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.subject, sighting_id, subject_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="POST", request=request)
+        r = requests.post(url, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
 
     # Returns job_id if task has been successfully launched
     # raise an error instead
     def add_sighting_to_subject(self, sighting_id, subject_id, request=None):
-
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="POST", request=request)
