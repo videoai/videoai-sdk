@@ -483,12 +483,12 @@ class VideoAIUser(object):
         else:
             return False, None, None
 
-    def result_file(self, day_count, job_id, filename, request=None):
+    def result_file(self, domain_id, day_count, job_id, filename, request=None):
         '''
         Get a result file
         :return:
         '''
-        url = "{}/results/{}/{}/{}".format(self.base_url, day_count, job_id, filename)
+        url = "{}/results/{}/{}/{}/{}".format(self.base_url, domain_id, day_count, job_id, filename)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
