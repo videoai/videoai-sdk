@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-import os
 from setuptools import setup
+import os
+version_file = open(os.path.join('.', 'version.txt'))
 
 setup(
     name = 'videoai-sdk',
-    version='5.1',
+    version=version_file.read().strip(),
     description='An SDK for accessing VideoAI',
     keywords='video processing, machine learning, security, analytics, face-recognition',
     license='Commercial',
