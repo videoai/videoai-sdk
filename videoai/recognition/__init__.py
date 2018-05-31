@@ -136,6 +136,17 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+    def add_sighting(self, data, request=None):
+
+        url = "{}/{}".format(self.base_url, self.sighting)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="POST", request=request)
+        r = requests.post(url, headers=self.header, data=data,  allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
+
     def create_subject(self,
                        name,
                        watchlist='',
