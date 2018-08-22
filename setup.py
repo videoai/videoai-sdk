@@ -21,7 +21,7 @@ setup(
         'requests>=2.11',
         'configparser>=3.5',
         'oauth2>=1.9',
-        'oauth2client>=1.2'
+        'oauth2client>=4.1.2'
     ],
     include_package_data=True,
     zip_safe=False,
