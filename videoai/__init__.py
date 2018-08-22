@@ -1,5 +1,4 @@
 import os
-import base64
 import requests
 import oauth2 as oauth
 import time
