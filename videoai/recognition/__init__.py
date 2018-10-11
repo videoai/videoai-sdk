@@ -60,6 +60,15 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+    def get_sighting(self, sighting_id, request=None):
+        url = '{}/sighting/{}'.format(self.base_url, sighting_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
     def hide_sighting(self, sighting_id, request=None):
         url = '{}/hide/{}'.format(self.base_url, sighting_id)
         if SIGN_REQUEST:

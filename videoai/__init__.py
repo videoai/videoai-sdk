@@ -990,9 +990,9 @@ class BuildVideo(VideoAIUser):
             self.download_file(task['video'])
         return task
 
-    def from_face_log(self, face_log_id, download=True, wait_until_finished=True):
+    def from_face_log(self, face_log_id, download=True, wait_until_finished=True, request=None):
 
-        json_data = self.request(face_log_id=face_log_id)
+        json_data = self.request(face_log_id=face_log_id, request=request)
 
         if not wait_until_finished:
             return json_data
@@ -1048,9 +1048,9 @@ class BuildImage(VideoAIUser):
 
         return json_data
 
-    def from_sighting(self, sighting_id, download=True, wait_until_finished=True):
+    def from_sighting(self, sighting_id, download=True, wait_until_finished=True, request=None):
 
-        json_data = self.request(sighting_id=sighting_id)
+        json_data = self.request(sighting_id=sighting_id, request=request)
 
         if not wait_until_finished:
             return json_data
@@ -1066,9 +1066,9 @@ class BuildImage(VideoAIUser):
             self.download_file(task['image'])
         return task
 
-    def from_face_log_image(self, face_log_image_id, download=True, wait_until_finished=True):
+    def from_face_log_image(self, face_log_image_id, download=True, wait_until_finished=True, request=None):
 
-        json_data = self.request(face_log_image_id=face_log_image_id)
+        json_data = self.request(face_log_image_id=face_log_image_id, request=request)
 
         if not wait_until_finished:
             return json_data
