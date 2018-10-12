@@ -6,6 +6,8 @@ import time
 from os.path import expanduser
 from configparser import ConfigParser
 import json
+import socket
+from urlparse import urlsplit
 
 #import logging
 #logger = logging.getLogger(__name__)
@@ -83,8 +85,17 @@ def print_http_response(r):
     print json.dumps(r.json(), indent=4, sort_keys=True)
 
 
-from urlparse import urlsplit
-
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 # This function will sign a request using, method, url (with parameters), data (form parameters)
 #       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
@@ -116,29 +127,31 @@ def sign_request(url,
     device_data = ""
     if request is not None:
         ip_addr = None
-        lat = None
-        lng = None
         try:
             ip_addr = request.remote_addr
             # Convert IPv6 to IPv4 notation
             if ip_addr[:7] == "::ffff:":
                 ip_addr = ip_addr[7:]
-            if LOCALISE_IP_ADDRESS:
-                send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
-                r = requests.get(send_url)
-                j = json.loads(r.text)
-                lat = j['latitude']
-                lng = j['longitude']
-            device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr, lat, lng)
         except:
-            print("no ip or no location available")
+            ip_addr='unknown'
+    else:
+        ip_addr=get_ip()
+
+    lat = None
+    lng = None
+    if LOCALISE_IP_ADDRESS:
+        send_url = 'http://freegeoip.net/json/{}'.format(ip_addr)
+        r = requests.get(send_url)
+        j = json.loads(r.text)
+        lat = j['latitude']
+        lng = j['longitude']
+    device_data = 'device_id="{}", lat="{}", lng="{}"'.format(ip_addr, lat, lng)
 
     params = {
         'oauth_version': '1.0',
         'oauth_nonce': str(oauth_nonce),
         'oauth_timestamp': str(oauth_timestamp)
     }
-
     if device_data is not None and device_data != "":
         params['device_data'] = device_data
     if data is not None:
@@ -173,7 +186,6 @@ def sign_request(url,
     header = req.to_header()
     header['Device'] = '{}'.format(device_data)
     header['Initial-User-Agent'] = initial_user_agent
-
     return header
 
 class VideoAIUser(object):
@@ -207,7 +219,6 @@ class VideoAIUser(object):
                authentication_server='',
                verbose=False, request=None):
         """Construct from bits and pieces.  Missing parameters get picked up from key_file."""
-
         # Need some information from the key-file
         if not key_file:
             home = expanduser("~")
@@ -230,7 +241,6 @@ class VideoAIUser(object):
             "email": email,
             "password": password
         }
-
         url = '{}/auth/api_login?client_id={}'.format(authentication_server, client_id)
         header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST', request=request)
         response = requests.post(url, data, headers=header, verify=VERIFY_SSL)
@@ -287,10 +297,6 @@ class VideoAIUser(object):
         url = '{}/auth/initialize_unittest'.format(authentication_server)
         self.sign_request(url=url, data=data, method='POST', request=request)
         response = requests.post(url, data, headers=self.header, verify=VERIFY_SSL)
-
-        if self.verbose:
-            print print_http_response(response)
-
         if response.status_code == 200:
             return True, response.content, response.headers
         else:
@@ -350,10 +356,10 @@ class VideoAIUser(object):
 
             r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
-            task = json_data['task']
-
             if self.verbose:
                 print json.dumps(json_data, indent=4, sort_keys=True)
+            task = json_data['task']
+
 
         return json_data
 
@@ -1095,7 +1101,6 @@ class ImportData(VideoAIUser):
 
     def request(self, input_file, data=None, request=None):
 
-        #print 'Requested import data'
 
         if not os.path.isfile(input_file):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
@@ -1126,7 +1131,7 @@ class ImportData(VideoAIUser):
         return json_data
 
     def from_zipped_csv_files(self, input_file, data=None, wait_until_finished=True, request=None):
-        #print 'Import data from zipped csv files'
+
         json_data = self.request(input_file=input_file, data=data, request=request)
 
         if not wait_until_finished:
@@ -1141,6 +1146,39 @@ class ImportData(VideoAIUser):
 
         return json_data
 
+    def accept_waiting_tasks(self, job_id, targets="", wait_until_finished=True, request=None):
+        url = "{}/accept_waiting_tasks/{}".format(self.base_url, job_id)
+
+        data = {'targets': targets}
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            if self.verbose:
+                print print_http_response(r)
+
+            json_data = r.json()
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
+
+            task = json_data['task']
+            if not task['success']:
+                print 'Failed accepting subjects: {0}'.format(task['message'])
+                return task
+            return json_data
+
+        except:
+            raise FailedAPICall("Failed to call accept_waiting_tasks")
 
 
 class ImportSubjects(VideoAIUser):
@@ -1173,7 +1211,6 @@ class ImportSubjects(VideoAIUser):
         except:
             raise FailedAPICall('ImportSubjects')
         
-    
         if self.verbose:
             print print_http_response(r)
 
@@ -1199,11 +1236,10 @@ class ImportSubjects(VideoAIUser):
         return json_data 
 
     def accept_waiting_tasks(self, job_id, targets="", request=None):
-        print("IN WAITING TASKS")
+
         url = "{}/accept_waiting_tasks/{}".format(self.base_url, job_id)
 
         data = {'targets': targets}
-        print("url {} DATA {}".format(url, data))
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
@@ -1240,11 +1276,12 @@ class ImportSubjects(VideoAIUser):
             self.sign_request(url, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-        print("R {}".format(r.json()))
+
         if self.verbose:
             print_http_response(r)
 
         return r.json()
+
 
 class ExportSubjects(VideoAIUser):
 
@@ -1272,7 +1309,6 @@ class ExportSubjects(VideoAIUser):
         except:
             raise FailedAPICall('ExportSubjects')
         
-    
         if self.verbose:
             print print_http_response(r)
 
@@ -1304,7 +1340,6 @@ class ExportSubjects(VideoAIUser):
     def export_filtered_subjects(self, data, request=None):
         url = "{}/export_filtered_subjects".format(self.base_url)
 
-        #print("url {} DATA {}".format(url, data))
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
@@ -1329,11 +1364,11 @@ class ExportSubjects(VideoAIUser):
         return json_data
 
     def export_checked_subjects(self, job_id, targets="", request=None):
-        #print("IN EXPORT CHECKED SUBJECTS")
+
         url = "{}/export_checked_subjects/{}".format(self.base_url, job_id)
 
         data = {'targets': targets}
-        print("url {} DATA {}".format(url, data))
+
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
@@ -1369,10 +1404,7 @@ class ExportLogs(VideoAIUser):
 
     def request(self, format='csv', request=None):
 
-        print 'Requested export Logs'
-
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        print url
         data = {'format': format}
         try:
             if SIGN_REQUEST:

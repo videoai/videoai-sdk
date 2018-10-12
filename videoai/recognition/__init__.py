@@ -409,7 +409,6 @@ class Recognition(VideoAIUser):
 
         # if we have a valid watchlist then we try and use it
         if watchlist:
-            print 'appending {}'.format(watchlist)
             wl_ids.append(unicode(watchlist))
 
         if watchlist_data:
@@ -442,7 +441,7 @@ class Recognition(VideoAIUser):
     def get_updated_subject_from_list_and_timestamp(self, subject_list, timestamp, request=None):
 
         url = u"{}/{}/updated".format(self.base_url, self.subject)
-        #print("url {}".format(url))
+
         data = {'subject_list': json.dumps(subject_list), 'timestamp': timestamp}
 
         if SIGN_REQUEST:
@@ -504,7 +503,6 @@ class Recognition(VideoAIUser):
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
-
         data = {
             'base64': str(base64)
         }
@@ -572,7 +570,6 @@ class Recognition(VideoAIUser):
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
-        #print("request {}".format(request))
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
@@ -580,7 +577,6 @@ class Recognition(VideoAIUser):
                     url += sep + v + "=" + unicode(data[v])
                     sep = "&"
 
-        print(u"URL {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
@@ -682,8 +678,8 @@ class Recognition(VideoAIUser):
                 self.sign_request(url=url, data=w, method='POST', request=request)
                 response = requests.post(url, w, headers=self.header, verify=VERIFY_SSL)
                 json_response = json.loads(response.text)
-        if self.verbose:
-            print print_http_response(response)
+                if self.verbose:
+                    print print_http_response(response)
 
         if not need_to_create:
             return True, json.dumps({'status': 'success'}), None
