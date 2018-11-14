@@ -191,7 +191,7 @@ def sign_request(url,
 class VideoAIUser(object):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
-
+        print("host {}".format(host))
         self.base_url = host
         self.client_id = client_id
         self.client_secret = client_secret
@@ -250,6 +250,11 @@ class VideoAIUser(object):
             raise AuthenticationError(json_response['message'])
         token = json_response['oauth_token']['token']
         host = json_response['user']['api_url']
+        try:
+            port_number = int(host)
+            host = json_response['user']['internal_api_url']
+        except Exception as e:
+            pass
 
         return cls(token=token, host=host, client_id=client_id, client_secret=client_secret, verbose=verbose)
 

@@ -580,7 +580,13 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
-        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
+        try:
+            r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
+        except Exception as e:
+            data = {}
+            data['success'] = 'failed'
+            data['data'] = ""
+            return json.dumps(data)
 
         if self.verbose:
             print print_http_response(r)
