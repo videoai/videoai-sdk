@@ -8,6 +8,7 @@ from configparser import ConfigParser
 import json
 import socket
 from urlparse import urlsplit
+import pkg_resources
 
 #import logging
 #logger = logging.getLogger(__name__)
@@ -33,7 +34,6 @@ from urlparse import urlsplit
 VERIFY_SSL = False
 SIGN_REQUEST = True
 
-VERSION = "1.3.41"
 
 LOCALISE_IP_ADDRESS = False
 
@@ -41,7 +41,12 @@ LOCALISE_IP_ADDRESS = False
 class Version():
     @staticmethod
     def get_version():
-        return VERSION
+        version = "undef"
+        try:
+            version = pkg_resources.get_distribution('videoai-sdk').version
+        except Exception as e:
+            print("Unable to get version from package")
+        return version
 
 
 class Error(Exception):
