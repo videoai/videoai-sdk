@@ -460,8 +460,29 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-    
-    
+    def get_descriptors_number(self, request=None):
+        """
+        List all the descriptions in the database
+        :param description_id: The description you want to get
+        :return:
+        """
+        url = u"{}/descriptors_number".format(self.base_url, self.description)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+
+        self.verbose = True
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Get description number failed: {}".format(r.json()['message']))
+
+        return r.json()
+
     def get_description(self,
                         description_id,
                         request=None
