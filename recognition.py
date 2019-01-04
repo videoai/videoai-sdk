@@ -19,7 +19,8 @@ parser.add_argument('--subject-id', dest='subject_id', help='A subject id')
 parser.add_argument('--subject-thumbnail', dest='subject_thumbnail', help='Get a thumbnail of the subject id')
 parser.add_argument('--subjects', dest='subjects', action='store_true', help='List all subjects in database.')
 parser.add_argument('--gender', dest='gender', default='Unknown', help='Gender of subject.')
-parser.add_argument('--tag', dest='tag', default='Unknown', help='A tag name to give a subject.')
+parser.add_argument('--watchlist-id', dest='watchlist', default='', help='The id of the watchlist to assign subject to.')
+parser.add_argument('--watchlists', dest='watchlists', action='store_true', help='List the watchlists.')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose')
 parser.add_argument('--download', dest='download', action='store_true', help='Download any results')
 parser.set_defaults(download=False)
@@ -48,13 +49,20 @@ if args.recognition and args.video:
 # List all subjects
 if args.subjects:
     print "Listing all the subjects"
-    tags = recognition.list_subjects()
+    recognition.list_subjects()
+
+# List all watchlists
+if args.watchlists:
+    print "Listing all the watchlists"
+    recognition.list_watchlists()
+
 
 # Delete all subjects
 if args.delete_subjects:
     print 'Deleting all the subjects in your database'
     try:
-        subjects = recognition.list_subjects()
+        response = recognition.list_subjects()
+        subjects = response['data']['subjects']
         for subject in subjects:
             subject_id = subject['subject_id']
             print ' - deleting subject {}'.format(subject_id)
@@ -64,35 +72,39 @@ if args.delete_subjects:
 
 # Create a subject
 if args.create_subject and not args.image:
-    print 'Going to create a subject with name {}, with tag {} and gender {}'.format(args.name, args.tag, args.gender)
+    print 'Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender)
 
     try:
         # Lets create the subject
-        user_data = {'gender': args.gender, 'notes': ''}
-        subject = recognition.create_subject(name=args.name, tag=args.tag, user_data=user_data)
+        subject_data = {'gender': args.gender, 'notes': ''}
+        response = recognition.create_subject(name=args.name, watchlist=args.watchlist, subject_data=subject_data)
+        subject = response['data']['subject']
         subject_id = subject['subject_id']
         print 'Created subject with id {}'.format(subject_id)
     except Exception as err:
         print('Trouble creating subject', err)
 
+
 # Create a subject from an enrollment image
-def enrol_from_image(host, key_file, verbose, image, name, tag):
+def enrol_from_image(key_file, verbose, image, name, watchlist):
     try:
-        face_log_image = FaceLogImage(host=host, key_file=key_file, verbose=verbose)
+        face_log_image = FaceLogImage.create(key_file=args.key_file, verbose=args.verbose)
         result = face_log_image.apply(image_file=image,
                                       download=False,
                                       min_size=80)
 
-        if result['number_of_sightings'] != 1:
+        if result['task']['number_of_sightings'] != 1:
             raise Exception('Wrong amount of faces in input image')
 
         # The face of interest is the first one
-        face = result['sightings'][0]
+        face = result['task']['sightings'][0]
         gender = face['gender']
 
         # Lets create the subject
-        user_data = {'gender': gender, 'notes': ''}
-        subject = recognition.create_subject(name=name, tag=tag, user_data=user_data)
+        subject_data = {'gender': gender, 'notes': ''}
+        response = recognition.create_subject(name=name, watchlist=watchlist, subject_data=subject_data)
+        subject = response['data']['subject']
+        subject_id = subject['subject_id']
         subject_id = subject['subject_id']
         print 'Created subject with id {}'.format(subject_id)
 
@@ -103,11 +115,11 @@ def enrol_from_image(host, key_file, verbose, image, name, tag):
 
 # Create a subject and add face from image
 if args.create_subject and args.image:
-    print 'Going to create a subject with name {}, with tag {} and gender {}'.format(args.name, args.tag, args.gender)
+    print 'Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender)
 
     # Lets run a face-log on the image
     try:
-        enrol_from_image(args.host, args.key_file, args.verbose, args.image, args.name, args.tag)
+        enrol_from_image(args.key_file, args.verbose, args.image, args.name, args.watchlist)
     except Exception as err:
         print('Trouble creating subject with image', err)
 
@@ -126,7 +138,7 @@ if args.image_dir:
             continue
         try:
             print 'Enrolling {} from image {}'.format(name, image_file)
-            enrol_from_image(args.host, args.key_file, args.verbose, image_file, name, args.tag)
+            enrol_from_image(args.key_file, args.verbose, image_file, name, args.watchlist)
         except:
             pass
 
