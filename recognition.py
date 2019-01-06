@@ -76,7 +76,7 @@ if args.create_subject and not args.image:
 
     try:
         # Lets create the subject
-        subject_data = {'gender': args.gender, 'notes': ''}
+        subject_data = {'gender': args.gender}
         response = recognition.create_subject(name=args.name, watchlist=args.watchlist, subject_data=subject_data)
         subject = response['data']['subject']
         subject_id = subject['subject_id']
@@ -101,7 +101,7 @@ def enrol_from_image(key_file, verbose, image, name, watchlist):
         gender = face['gender']
 
         # Lets create the subject
-        subject_data = {'gender': gender, 'notes': ''}
+        subject_data = {'gender': gender }
         response = recognition.create_subject(name=name, watchlist=watchlist, subject_data=subject_data)
         subject = response['data']['subject']
         subject_id = subject['subject_id']
