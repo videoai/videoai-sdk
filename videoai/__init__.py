@@ -1102,6 +1102,67 @@ class BuildImage(VideoAIUser):
         return task
 
 
+class DeleteSubjects(VideoAIUser):
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(DeleteSubjects, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                             verbose=verbose)
+        self.end_point = 'delete_filtered_subjects'
+
+    def request(self, request=None):
+
+        print 'Requested delete subjects'
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+        except:
+            raise FailedAPICall('DeleteSubjects')
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("DeleteSubjects request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def delete_filtered_subjects(self, data, request=None):
+        url = "{}/delete_filtered_subjects".format(self.base_url)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while deleting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call delete_filtered_subjects")
+
+        return json_data
+
+
 class ImportData(VideoAIUser):
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(ImportData, self).__init__(token=token, host=host, client_id=client_id,
