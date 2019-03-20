@@ -11,6 +11,7 @@ import datetime
 from os.path import expanduser
 from configparser import ConfigParser
 import os
+import hashlib
 
 #from ..logger import console_logger, file_logger
 
@@ -296,17 +297,16 @@ class Recognition(VideoAIUser):
         return r.json()
 
 
-    def get_subject(self, subject_id, request=None):
+    def get_subject(self, subject_id, no_sighting=False, request=None):
         """
         Get a subject
         """
-        url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
+        url = "{0}/{1}/{2}?no_sighting={3}".format(self.base_url, self.subject, subject_id, no_sighting)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
@@ -460,6 +460,57 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
+    def get_subject_status(self, verbose=False, last_update=None, request=None):
+        url = u"{}/subject_status".format(self.base_url)
+
+        data = {'verbose': verbose}
+        if last_update is not None:
+            try:
+                data['last_update'] = int(last_update)
+            except Exception as e:
+                print("Exception in SDK get_subject_status: last_update is not an integer ({})".format(last_update))
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="POST", request=request)
+
+        r = requests.post(url, data=data, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Create subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
+
+    def get_descriptor(self, description_id, with_thumbnail=False, request=None):
+        url = u"{}/descriptor/{}?with_thumbnail={}".format(self.base_url, description_id, with_thumbnail)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+
+        try:
+            if r.headers['md5'] is not None:
+                md5 = hashlib.md5(r.text).hexdigest()
+                if md5 != r.headers['md5']:
+                    print("MD5  NOT  OK")
+        except Exception as e:
+            print("Exception in SDK get_descriptor while checking md5 ({})".format(e))
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Get description failed: {}".format(r.json()['message']))
+
+        return r.json()
+
     def get_descriptors_number(self, request=None):
         """
         List all the descriptions in the database
@@ -473,7 +524,7 @@ class Recognition(VideoAIUser):
 
         r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
 
-        self.verbose = True
+        #self.verbose = True
         if self.verbose:
             print print_http_response(r)
 
