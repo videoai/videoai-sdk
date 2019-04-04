@@ -715,6 +715,37 @@ class Recognition(VideoAIUser):
 
         return json_resp
 
+    def delete_watchlists(self, request=None):
+        """
+        Delete all the watchlists
+        :param
+        :return:
+        """
+        watchlists = self.list_watchlists()['data']['watchlists']
+        for watchlist in watchlists:
+            self.delete_watchlist(watchlist['id'])
+
+
+
+    def delete_watchlist(self, watchlist_id, request=None):
+        """
+        Delete a watchlist
+        :param watchlist_id: The watchlist id
+        :return:
+        """
+        url = "{0}/{1}/{2}".format(self.base_url, self.watchlist, watchlist_id)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="DELETE", request=request)
+        r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+        return r.json()
+
     def watchlist_id(self, watchlist_name):
         watchlists = self.list_watchlists(ignore_unknown=True)
         if watchlists['status'] != 'success':
