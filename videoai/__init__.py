@@ -196,7 +196,7 @@ def sign_request(url,
 class VideoAIUser(object):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
-        print("host {}".format(host))
+        # print("host {}".format(host))
         self.base_url = host
         self.client_id = client_id
         self.client_secret = client_secret
@@ -1260,8 +1260,6 @@ class ImportSubjects(VideoAIUser):
         self.end_point = 'import_subjects'
 
     def request(self, input_file, request=None):
-
-        print 'Requested import subjects'
 
         if not os.path.isfile(input_file) :
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
