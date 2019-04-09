@@ -447,13 +447,13 @@ class VideoAIUser(object):
 
         return r.json()
 
-    def tasks(self, page=1, number_per_page=3, request=None):
+    def tasks(self, page=1, number_per_page=3, search_by_category="", request=None):
         '''
         Get a list of all tasks
         :return:
         '''
-        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.end_point, page, number_per_page)
 
+        url = "{0}/{1}/{2}/{3}?search_by_category={4}".format(self.base_url, self.end_point, page, number_per_page, search_by_category)
 
         if SIGN_REQUEST:
             self.sign_request(url, method="GET", request=request)
