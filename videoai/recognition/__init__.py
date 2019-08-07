@@ -4,12 +4,16 @@
 __author__ = 'kieron'
 
 from videoai import VideoAIUser, print_http_response, SIGN_REQUEST, Error, FailedAPICall, VERIFY_SSL, get_parameter
+
 import json
 import requests
 import datetime
 from os.path import expanduser
 from configparser import ConfigParser
 import os
+import hashlib
+
+#from ..logger import console_logger, file_logger
 
 # get rid of annoying message about using unverified certificates
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -30,14 +34,14 @@ class Recognition(VideoAIUser):
         self.description = 'description'
         self.sighting = 'sighting'
         self.watchlist = 'watchlist'
-        self.watchlisted = 'watchlisted'
+        self.subject_watchlist = 'subject_watchlist'
 
     def subject_thumbnail(self, subject_id, request=None):
         url = '{}/{}/{}'.format(self.base_url, 'thumbnail/subject', subject_id)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
-		
+
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
 
         #if True:
@@ -56,6 +60,25 @@ class Recognition(VideoAIUser):
         if self.verbose:
             print print_http_response(r)
         return r.content
+
+    def get_sighting(self, sighting_id, request=None):
+        url = '{}/sighting/{}'.format(self.base_url, sighting_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
+    def hide_sighting(self, sighting_id, request=None):
+        url = '{}/hide/{}'.format(self.base_url, sighting_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
 
     def confirm_sighting_identity(self, sighting_id, subject_id, request=None):
         url = '{}/sighting/{}/{}/true'.format(self.base_url, sighting_id, subject_id)
@@ -123,6 +146,17 @@ class Recognition(VideoAIUser):
             print print_http_response(r)
         return r.content
 
+    def add_sighting(self, data, request=None):
+
+        url = "{}/{}".format(self.base_url, self.sighting)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="POST", request=request)
+        r = requests.post(url, headers=self.header, data=data,  allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print print_http_response(r)
+        return r.json()
+
+
     def create_subject(self,
                        name,
                        watchlist='',
@@ -186,7 +220,6 @@ class Recognition(VideoAIUser):
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
         return r.json()
-
 
     def edit_subject_watchlist(self, subject_id, watchlist_ids=[], watchlist_ids_to_add='',
                                watchlist_ids_to_remove='', request=None):
@@ -264,17 +297,16 @@ class Recognition(VideoAIUser):
         return r.json()
 
 
-    def get_subject(self, subject_id, request=None):
+    def get_subject(self, subject_id, no_sighting=False, request=None):
         """
         Get a subject
         """
-        url = "{0}/{1}/{2}".format(self.base_url, self.subject, subject_id)
+        url = "{0}/{1}/{2}?no_sighting={3}".format(self.base_url, self.subject, subject_id, no_sighting)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-
         if r.json()['status'] != 'success':
             print r.text
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
@@ -409,7 +441,7 @@ class Recognition(VideoAIUser):
     def get_updated_subject_from_list_and_timestamp(self, subject_list, timestamp, request=None):
 
         url = u"{}/{}/updated".format(self.base_url, self.subject)
-        #print("url {}".format(url))
+
         data = {'subject_list': json.dumps(subject_list), 'timestamp': timestamp}
 
         if SIGN_REQUEST:
@@ -428,8 +460,80 @@ class Recognition(VideoAIUser):
         # @@ TODO lets try it
         return r.json()
 
-    
-    
+    def get_subject_status(self, verbose=False, last_update=None, request=None):
+        url = u"{}/subject_status".format(self.base_url)
+
+        data = {'verbose': verbose}
+        if last_update is not None:
+            try:
+                data['last_update'] = int(last_update)
+            except Exception as e:
+                print("Exception in SDK get_subject_status: last_update is not an integer ({})".format(last_update))
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="POST", request=request)
+
+        r = requests.post(url, data=data, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Create subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
+
+    def get_descriptor(self, description_id, with_thumbnail=False, request=None):
+        url = u"{}/descriptor/{}?with_thumbnail={}".format(self.base_url, description_id, with_thumbnail)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+
+        try:
+            if r.headers['md5'] is not None:
+                md5 = hashlib.md5(r.text).hexdigest()
+                if md5 != r.headers['md5']:
+                    print("MD5  NOT  OK")
+        except Exception as e:
+            print("Exception in SDK get_descriptor while checking md5 ({})".format(e))
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Get description failed: {}".format(r.json()['message']))
+
+        return r.json()
+
+    def get_descriptors_number(self, request=None):
+        """
+        List all the descriptions in the database
+        :param description_id: The description you want to get
+        :return:
+        """
+        url = u"{}/descriptors_number".format(self.base_url, self.description)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+
+        #self.verbose = True
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            raise Exception("Get description number failed: {}".format(r.json()['message']))
+
+        return r.json()
+
     def get_description(self,
                         description_id,
                         request=None
@@ -471,7 +575,6 @@ class Recognition(VideoAIUser):
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
-
         data = {
             'base64': str(base64)
         }
@@ -493,15 +596,30 @@ class Recognition(VideoAIUser):
 
         return r.json()
 
-
-
     def enrol_from_image(self, subject_id, image_file, request=None):
         pass
+
+    # link sighting to subject without adding the description
+    def link_sighting_to_subject(self, sighting_id, subject_id, request):
+        url = "{0}/{1}/{2}/{3}".format(self.base_url, self.subject, sighting_id, subject_id)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="POST", request=request)
+        r = requests.post(url, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+            # raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
+
+        # We should return the complete json containing a status to be able to react to error
+        # @@ TODO lets try it
+        return r.json()
 
     # Returns job_id if task has been successfully launched
     # raise an error instead
     def add_sighting_to_subject(self, sighting_id, subject_id, request=None):
-
         url = "{0}/{1}/{2}/{3}".format(self.base_url, self.sighting, sighting_id, subject_id)
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="POST", request=request)
@@ -524,7 +642,6 @@ class Recognition(VideoAIUser):
         :return:
         """
         url = u"{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
-        #print("request {}".format(request))
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
@@ -535,7 +652,13 @@ class Recognition(VideoAIUser):
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
-        r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
+        try:
+            r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
+        except Exception as e:
+            data = {}
+            data['success'] = 'failed'
+            data['data'] = ""
+            return json.dumps(data)
 
         if self.verbose:
             print print_http_response(r)
@@ -569,6 +692,8 @@ class Recognition(VideoAIUser):
     # list all available watchlist
     def list_watchlists(self, ignore_unknown=False, request=None):
         url = "{0}/{1}".format(self.base_url, self.watchlist)
+        #print("---->>+++ THE url {} / {}".format(url, console_logger))
+        #console_logger.info("--dsadsadsadsa-->>+++ THE url {}".format(url))
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
 
@@ -589,6 +714,37 @@ class Recognition(VideoAIUser):
             json_resp['data']['watchlists'] = watchlists
 
         return json_resp
+
+    def delete_watchlists(self, request=None):
+        """
+        Delete all the watchlists
+        :param
+        :return:
+        """
+        watchlists = self.list_watchlists()['data']['watchlists']
+        for watchlist in watchlists:
+            self.delete_watchlist(watchlist['id'])
+
+
+
+    def delete_watchlist(self, watchlist_id, request=None):
+        """
+        Delete a watchlist
+        :param watchlist_id: The watchlist id
+        :return:
+        """
+        url = "{0}/{1}/{2}".format(self.base_url, self.watchlist, watchlist_id)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="DELETE", request=request)
+        r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
+
+        if self.verbose:
+            print print_http_response(r)
+
+        if r.json()['status'] != 'success':
+            print r.text
+        return r.json()
 
     def watchlist_id(self, watchlist_name):
         watchlists = self.list_watchlists(ignore_unknown=True)
@@ -631,8 +787,8 @@ class Recognition(VideoAIUser):
                 self.sign_request(url=url, data=w, method='POST', request=request)
                 response = requests.post(url, w, headers=self.header, verify=VERIFY_SSL)
                 json_response = json.loads(response.text)
-        if self.verbose:
-            print print_http_response(response)
+                if self.verbose:
+                    print print_http_response(response)
 
         if not need_to_create:
             return True, json.dumps({'status': 'success'}), None
