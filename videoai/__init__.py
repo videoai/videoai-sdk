@@ -519,6 +519,46 @@ class VideoAIUser(object):
             return False, None, None
 
 
+class VideoAIClient(VideoAIUser):
+
+    def __init__(self, token, host, client_id, client_secret, verbose=False):
+        super(VideoAIClient, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
+                                           verbose=verbose)
+        self.end_point = 'client'
+
+    def get_data(self, client_id, request=None):
+
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, client_id)
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=None, method="GET", request=request)
+
+            r = requests.get(url,
+                              headers=self.header,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Client Get request failed: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call FaceLogStream:get")
+
+        return json_data
+
+
+    def request(self):
+        pass
+
+    def apply(self):
+        pass
+
+
 class FaceLiveService(VideoAIUser):
 
     def __init__(self, token, host, client_id, client_secret, verbose=False):
