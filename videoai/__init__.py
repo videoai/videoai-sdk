@@ -1005,7 +1005,7 @@ class BuildVideo(VideoAIUser):
         if sighting_id is not None:
             data = {'sighting_id': sighting_id}
         else:
-            data = {'face_log_id': face_log_id}
+            data = {'face_log_job_id': face_log_id}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
