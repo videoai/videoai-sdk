@@ -1211,21 +1211,21 @@ class ImportData(VideoAIUser):
         self.end_point = 'import_data'
 
     def request(self, input_file, data=None, request=None):
-
-
         if not os.path.isfile(input_file):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
         try:
+            if data is None:
+                data = {}
+            data['filename'] = input_file
+
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", data=data, request=request)
 
-            files = {'input_file': open("{0}".format(input_file), mode='rb')}
             r = requests.post(url,
                               headers=self.header,
-                              files=files,
                               data=data,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
