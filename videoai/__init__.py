@@ -10,15 +10,15 @@ import socket
 from urlparse import urlsplit
 import pkg_resources
 
-#import logging
-#logger = logging.getLogger(__name__)
+# import logging
+# logger = logging.getLogger(__name__)
 
-#import logging.config
-#config_file = '/home/anegri/__Development__/VideoAI.net/sdk/videoai/logging_config.ini'
-#logging.config.fileConfig(config_file)
+# import logging.config
+# config_file = '/home/anegri/__Development__/VideoAI.net/sdk/videoai/logging_config.ini'
+# logging.config.fileConfig(config_file)
 
-#from logger import console_logger, file_logger
-#if False:
+# from logger import console_logger, file_logger
+# if False:
 #    console_logger.debug('debug message')
 #    console_logger.info('info message')
 #    console_logger.warn('warn message')
@@ -33,7 +33,6 @@ import pkg_resources
 
 VERIFY_SSL = False
 SIGN_REQUEST = True
-
 
 LOCALISE_IP_ADDRESS = False
 
@@ -102,6 +101,7 @@ def get_ip():
         s.close()
     return IP
 
+
 # This function will sign a request using, method, url (with parameters), data (form parameters)
 #       if oauth_nonce and oauth_timestamp are not None it will use those provided ==> used to check signature
 #       if oauth_nonce and oauth_timestamp are None they will be generated
@@ -115,7 +115,7 @@ def sign_request(url,
                  oauth_nonce=None,
                  oauth_timestamp=None,
                  request=None):
-    #console_logger.info("in sign !!!!@!@!@!@!@!")
+    # console_logger.info("in sign !!!!@!@!@!@!@!")
     # Set the base oauth_* parameters along with any other parameters required
     # for the API call.
     # url = "{0}/{1}".format(self.base_url, self.end_point)
@@ -138,9 +138,9 @@ def sign_request(url,
             if ip_addr[:7] == "::ffff:":
                 ip_addr = ip_addr[7:]
         except:
-            ip_addr='unknown'
+            ip_addr = 'unknown'
     else:
-        ip_addr=get_ip()
+        ip_addr = get_ip()
 
     lat = None
     lng = None
@@ -173,9 +173,9 @@ def sign_request(url,
     params['oauth_consumer_key'] = consumer.key
 
     # Create our request. Change method, etc. accordingly.
-    #print("----- Parameters: {}".format(params))
-    #print("----- URL {}".format(url))
-    #print("----- method {}".format(method))
+    # print("----- Parameters: {}".format(params))
+    # print("----- URL {}".format(url))
+    # print("----- method {}".format(method))
 
     scheme, netloc, path, query, fragment = urlsplit(url)
 
@@ -193,8 +193,8 @@ def sign_request(url,
     header['Initial-User-Agent'] = initial_user_agent
     return header
 
-class VideoAIUser(object):
 
+class VideoAIUser(object):
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         # print("host {}".format(host))
         self.base_url = host
@@ -210,9 +210,8 @@ class VideoAIUser(object):
             basic_auth_header = "Basic {0}".format(formatted_token)
             self.header = {'Authorization': basic_auth_header}
 
-#        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
-#        print "Using VideoAI host '{}'".format(self.base_url)
-
+            #        print ("client_id / client_secret {}/{}".format(self.client_id, self.client_secret))
+            #        print "Using VideoAI host '{}'".format(self.base_url)
 
     @classmethod
     def create(cls,
@@ -236,7 +235,8 @@ class VideoAIUser(object):
             password = get_parameter(param=password, name='password', parser=parser)
             client_id = get_parameter(param=client_id, name='client_id', parser=parser)
             client_secret = get_parameter(param=client_secret, name='client_secret', parser=parser)
-            authentication_server = get_parameter(param=authentication_server, name='authentication_server', parser=parser)
+            authentication_server = get_parameter(param=authentication_server, name='authentication_server',
+                                                  parser=parser)
 
         except:
             raise
@@ -247,7 +247,8 @@ class VideoAIUser(object):
             "password": password
         }
         url = '{}/auth/api_login?client_id={}'.format(authentication_server, client_id)
-        header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST', request=request)
+        header = sign_request(url=url, client_id=client_id, client_secret=client_secret, data=data, method='POST',
+                              request=request)
         response = requests.post(url, data, headers=header, verify=VERIFY_SSL)
         json_response = json.loads(response.text)
 
@@ -370,7 +371,6 @@ class VideoAIUser(object):
                 print json.dumps(json_data, indent=4, sort_keys=True)
             task = json_data['task']
 
-
         return json_data
 
     def download_file(self, url, local_filename='', local_dir='', request=None):
@@ -428,7 +428,7 @@ class VideoAIUser(object):
         if self.verbose:
             print_http_response(r)
         return r.json()
-    
+
     def import_tasks_report(self, job_id, page=1, number_per_page=3, show_ignored=False, request=None):
         '''
         Get a list of all tasks or if job_id provided of all subtask of job_id
@@ -453,7 +453,8 @@ class VideoAIUser(object):
         :return:
         '''
 
-        url = "{0}/{1}/{2}/{3}?search_by_category={4}".format(self.base_url, self.end_point, page, number_per_page, search_by_category)
+        url = "{0}/{1}/{2}/{3}?search_by_category={4}".format(self.base_url, self.end_point, page, number_per_page,
+                                                              search_by_category)
 
         if SIGN_REQUEST:
             self.sign_request(url, method="GET", request=request)
@@ -477,7 +478,7 @@ class VideoAIUser(object):
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
             print_http_response(r)
-       
+
         return r.json()
 
     def source_file(self, job_id, request=None):
@@ -520,10 +521,9 @@ class VideoAIUser(object):
 
 
 class VideoAIClient(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(VideoAIClient, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                           verbose=verbose)
+                                            verbose=verbose)
         self.end_point = 'client'
 
     def get_data(self, client_id, request=None):
@@ -534,9 +534,9 @@ class VideoAIClient(VideoAIUser):
                 self.sign_request(url, data=None, method="GET", request=request)
 
             r = requests.get(url,
-                              headers=self.header,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
+                             headers=self.header,
+                             allow_redirects=True,
+                             verify=VERIFY_SSL)
 
             json_data = r.json()
 
@@ -551,7 +551,6 @@ class VideoAIClient(VideoAIUser):
 
         return json_data
 
-
     def request(self):
         pass
 
@@ -560,10 +559,9 @@ class VideoAIClient(VideoAIUser):
 
 
 class FaceLiveService(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(FaceLiveService, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                           verbose=verbose)
+                                              verbose=verbose)
         self.end_point = 'face_live_service'
 
     def request(self):
@@ -576,7 +574,7 @@ class FaceLiveService(VideoAIUser):
 class FaceLogStream(VideoAIUser):
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(FaceLogStream, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                           verbose=verbose)
+                                            verbose=verbose)
         self.end_point = 'face_log_stream'
 
     def create_stream(self, request=None):
@@ -615,9 +613,9 @@ class FaceLogStream(VideoAIUser):
                 self.sign_request(url, data=None, method="GET", request=request)
 
             r = requests.get(url,
-                              headers=self.header,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
+                             headers=self.header,
+                             allow_redirects=True,
+                             verify=VERIFY_SSL)
 
             json_data = r.json()
 
@@ -668,14 +666,14 @@ class FaceLogStream(VideoAIUser):
         else
             that means we are adding images to the stream
         '''
-        #file_size = os.path.getsize(image_file) / 1000000.0
+        # file_size = os.path.getsize(image_file) / 1000000.0
 
         data = {
-                'min_size': min_size,
-                'recognition': recognition,
-                'compare_threshold': compare_threshold,
-                'top_n': top_n
-               }
+            'min_size': min_size,
+            'recognition': recognition,
+            'compare_threshold': compare_threshold,
+            'top_n': top_n
+        }
 
         if location is not None:
             data['location'] = location
@@ -707,14 +705,15 @@ class FaceLogStream(VideoAIUser):
                 print print_http_response(r)
 
             if json_data['status'] != 'success':
-                raise FailedAPICall("Face Log Stream request failed: {}". format(json_data['message']))
+                raise FailedAPICall("Face Log Stream request failed: {}".format(json_data['message']))
 
         except:
             raise FailedAPICall("Failed to call FaceLogStream")
 
         return json_data
 
-    def apply(self, image_file, job_id=None, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='',
+    def apply(self, image_file, job_id=None, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1,
+              subject_id='',
               wait_until_finished=True, local_output_dir='', location=None, request=None):
         json_data = self.request(image_file,
                                  job_id=job_id,
@@ -742,22 +741,22 @@ class FaceLogStream(VideoAIUser):
 
 
 class FaceLogImage(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(FaceLogImage, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
                                            verbose=verbose)
         self.end_point = 'face_log_image'
 
-    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='', location=None, request=None):
+    def request(self, image_file, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='',
+                location=None, request=None):
 
         file_size = os.path.getsize(image_file) / 1000000.0
 
         data = {
-                'min_size': min_size,
-                'recognition': recognition,
-                'compare_threshold': compare_threshold,
-                'top_n': top_n
-               }
+            'min_size': min_size,
+            'recognition': recognition,
+            'compare_threshold': compare_threshold,
+            'top_n': top_n
+        }
 
         if location is not None:
             data['location'] = location
@@ -787,14 +786,15 @@ class FaceLogImage(VideoAIUser):
                 print print_http_response(r)
 
             if json_data['status'] != 'success':
-                raise FailedAPICall("Face Log request failed: {}". format(json_data['message']))
+                raise FailedAPICall("Face Log request failed: {}".format(json_data['message']))
 
         except:
             raise FailedAPICall("Failed to call FaceLogImage")
 
         return json_data
 
-    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1, subject_id='',
+    def apply(self, image_file, download=True, min_size=80, recognition=0, compare_threshold=0.6, top_n=1,
+              subject_id='',
               wait_until_finished=True, local_output_dir='', location=None, request=None):
         json_data = self.request(image_file,
                                  min_size=min_size,
@@ -827,15 +827,15 @@ class FaceLog(VideoAIUser):
                                       verbose=verbose)
         self.end_point = 'face_log'
 
-    def request(self, video_file, 
-                start_frame=0, 
-                max_frames=0, 
+    def request(self, video_file,
+                start_frame=0,
+                max_frames=0,
                 min_size=80,
-                recognition=0, 
-                compare_threshold=0.55, 
-                top_n=1, 
-                subject_id=None, 
-                location=None, 
+                recognition=0,
+                compare_threshold=0.55,
+                top_n=1,
+                subject_id=None,
+                location=None,
                 request=None):
 
         file_size = os.path.getsize(video_file) / 1000000.0
@@ -848,10 +848,10 @@ class FaceLog(VideoAIUser):
             'compare_threshold': compare_threshold,
             'top_n': top_n,
         }
-        
+
         if location is not None:
             data['location'] = location
-        
+
         # are we requested a verification?
         if subject_id is not None:
             data['subject_id'] = subject_id
@@ -864,11 +864,11 @@ class FaceLog(VideoAIUser):
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
 
-            r = requests.post(url, 
-                              headers=self.header, 
-                              files=files, 
-                              data=data, 
-                              allow_redirects=True, 
+            r = requests.post(url,
+                              headers=self.header,
+                              files=files,
+                              data=data,
+                              allow_redirects=True,
                               verify=VERIFY_SSL)
 
             json_data = r.json()
@@ -877,23 +877,23 @@ class FaceLog(VideoAIUser):
                 print print_http_response(r)
 
             if json_data['status'] != 'success':
-                raise FailedAPICall("face_log request failed: {}". format(r.json()['message']))
+                raise FailedAPICall("face_log request failed: {}".format(r.json()['message']))
 
         except:
             raise FailedAPICall("Failed to run FaceLog")
         return json_data
 
-    def apply(self, 
-              video_file, 
-              download=True, 
-              start_frame=0, 
-              max_frames=0, 
-              min_size=80, 
+    def apply(self,
+              video_file,
+              download=True,
+              start_frame=0,
+              max_frames=0,
+              min_size=80,
               recognition=0,
-              compare_threshold=0.6, 
-              top_n=1, 
-              subject_id=None, 
-              wait_until_finished=True, 
+              compare_threshold=0.6,
+              top_n=1,
+              subject_id=None,
+              wait_until_finished=True,
               local_output_dir='', location=None,
               request=None):
 
@@ -925,7 +925,6 @@ class FaceLog(VideoAIUser):
 
 
 class FaceAuthenticate(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(FaceAuthenticate, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
                                                verbose=verbose)
@@ -965,13 +964,15 @@ class FaceAuthenticate(VideoAIUser):
             print print_http_response(r)
 
         if json_data['status'] != 'success':
-            raise FailedAPICall("Face Authenticate request failed: {}". format(r.json()['message']))
+            raise FailedAPICall("Face Authenticate request failed: {}".format(r.json()['message']))
 
         return json_data
 
-    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True, request=None):
+    def apply(self, gallery, probe1='', probe2='', download=True, compare_threshold=0.6, wait_until_finished=True,
+              request=None):
 
-        json_data = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold, request=request)
+        json_data = self.request(gallery=gallery, probe1=probe1, probe2=probe2, compare_threshold=compare_threshold,
+                                 request=request)
 
         if not wait_until_finished:
             return json_data
@@ -992,10 +993,9 @@ class FaceAuthenticate(VideoAIUser):
 
 
 class BuildVideo(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(BuildVideo, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                               verbose=verbose)
+                                         verbose=verbose)
         self.end_point = 'build_video'
 
     def request(self, sighting_id=None, face_log_id=None, request=None):
@@ -1024,7 +1024,7 @@ class BuildVideo(VideoAIUser):
             print print_http_response(r)
 
         if json_data['status'] != 'success':
-            raise FailedAPICall("BuildVideo request failed: {}". format(r.json()['message']))
+            raise FailedAPICall("BuildVideo request failed: {}".format(r.json()['message']))
 
         return json_data
 
@@ -1067,10 +1067,9 @@ class BuildVideo(VideoAIUser):
 
 
 class BuildImage(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(BuildImage, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                               verbose=verbose)
+                                         verbose=verbose)
         self.end_point = 'build_image'
 
     def request(self, sighting_id=None, face_log_image_id=None, request=None):
@@ -1083,7 +1082,7 @@ class BuildImage(VideoAIUser):
             data = {'face_log_job_id': face_log_image_id}
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        
+
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
@@ -1094,13 +1093,12 @@ class BuildImage(VideoAIUser):
             json_data = r.json()
         except:
             raise FailedAPICall('BuildImage')
-        
-    
+
         if self.verbose:
             print print_http_response(r)
 
         if json_data['status'] != 'success':
-            raise FailedAPICall("BuildImage request failed: {}". format(r.json()['message']))
+            raise FailedAPICall("BuildImage request failed: {}".format(r.json()['message']))
 
         return json_data
 
@@ -1202,30 +1200,107 @@ class DeleteSubjects(VideoAIUser):
 
         return json_data
 
+    def get_delete_filtered_subjects_task(self, job_id, request=None):
+        url = "{}/delete_filtered_subjects/{}".format(self.base_url, job_id)
+        data = None
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="GET", request=request)
+
+            r = requests.get(url,
+                             headers=self.header,
+                             data=data,
+                             allow_redirects=True,
+                             verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while deleting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call delete_filtered_subjects")
+
+        return json_data
+
+    def confirm_delete_filtered_subjects_task(self, job_id, request=None):
+        url = "{}/delete_filtered_subjects/{}".format(self.base_url, job_id)
+        data = None
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while deleting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call delete_filtered_subjects")
+
+        return json_data
+
+    def get_subjects_from_deletion_task(self, job_id, page=1, number_per_page=10, request=None):
+        url = "{}/subjects_from_deletion_task/{}/{}/{}".format(self.base_url, job_id, page, number_per_page)
+        data = None
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="GET", request=request)
+
+            r = requests.get(url,
+                             headers=self.header,
+                             data=data,
+                             allow_redirects=True,
+                             verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print print_http_response(r)
+
+            if json_data['status'] != 'success':
+                raise FailedAPICall("Error while deleting subjects: {}".format(json_data['message']))
+
+        except:
+            raise FailedAPICall("Failed to call delete_filtered_subjects")
+
+        return json_data
+
 
 class ImportData(VideoAIUser):
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(ImportData, self).__init__(token=token, host=host, client_id=client_id,
-                                             client_secret=client_secret,
-                                             verbose=verbose)
+                                         client_secret=client_secret,
+                                         verbose=verbose)
         self.end_point = 'import_data'
 
     def request(self, input_file, data=None, request=None):
+
         if not os.path.isfile(input_file):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
         try:
-            if data is None:
-                data = {}
-            data['filename'] = input_file
-
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", data=data, request=request)
 
+            files = {'input_file': open("{0}".format(input_file), mode='rb')}
             r = requests.post(url,
                               headers=self.header,
+                              files=files,
                               data=data,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
@@ -1293,15 +1368,14 @@ class ImportData(VideoAIUser):
 
 
 class ImportSubjects(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(ImportSubjects, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                               verbose=verbose)
+                                             verbose=verbose)
         self.end_point = 'import_subjects'
 
     def request(self, input_file, request=None):
 
-        if not os.path.isfile(input_file) :
+        if not os.path.isfile(input_file):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
@@ -1319,12 +1393,12 @@ class ImportSubjects(VideoAIUser):
             json_data = r.json()
         except:
             raise FailedAPICall('ImportSubjects')
-        
+
         if self.verbose:
             print print_http_response(r)
 
         if json_data['status'] != 'success':
-            raise FailedAPICall("ImportSubjects request failed: {}". format(r.json()['message']))
+            raise FailedAPICall("ImportSubjects request failed: {}".format(r.json()['message']))
 
         return json_data
 
@@ -1342,7 +1416,7 @@ class ImportSubjects(VideoAIUser):
             print 'Failed ImportSubjects: {0}'.format(task['message'])
             return task
 
-        return json_data 
+        return json_data
 
     def accept_waiting_tasks(self, job_id, targets="", request=None):
 
@@ -1393,10 +1467,9 @@ class ImportSubjects(VideoAIUser):
 
 
 class ExportSubjects(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(ExportSubjects, self).__init__(token=token, host=host, client_id=client_id, client_secret=client_secret,
-                                               verbose=verbose)
+                                             verbose=verbose)
         self.end_point = 'export_subjects'
 
     def request(self, request=None):
@@ -1404,7 +1477,7 @@ class ExportSubjects(VideoAIUser):
         print 'Requested export subjects'
 
         url = "{0}/{1}".format(self.base_url, self.end_point)
-        
+
         try:
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", request=request)
@@ -1417,12 +1490,12 @@ class ExportSubjects(VideoAIUser):
             json_data = r.json()
         except:
             raise FailedAPICall('ExportSubjects')
-        
+
         if self.verbose:
             print print_http_response(r)
 
         if json_data['status'] != 'success':
-            raise FailedAPICall("ExportSubjects request failed: {}". format(r.json()['message']))
+            raise FailedAPICall("ExportSubjects request failed: {}".format(r.json()['message']))
 
         return json_data
 
@@ -1436,11 +1509,11 @@ class ExportSubjects(VideoAIUser):
         json_data = self.wait(json_data)
 
         task = json_data['task']
-       
+
         if not task['success']:
             print 'Failed ExportSubjects: {0}'.format(task['message'])
             return task
-        
+
         if download:
             self.download_file(task['output_file'])
 
@@ -1501,14 +1574,14 @@ class ExportSubjects(VideoAIUser):
 
         return json_data
 
+
 # ExportLogs class
 # Export all tasks and action
 class ExportLogs(VideoAIUser):
-
     def __init__(self, token, host, client_id, client_secret, verbose=False):
         super(ExportLogs, self).__init__(token=token, host=host, client_id=client_id,
-                                             client_secret=client_secret,
-                                             verbose=verbose)
+                                         client_secret=client_secret,
+                                         verbose=verbose)
         self.end_point = 'export_logs'
 
     def request(self, format='csv', request=None):
