@@ -1297,10 +1297,12 @@ class ImportData(VideoAIUser):
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", data=data, request=request)
 
-            files = {'input_file': open("{0}".format(input_file), mode='rb')}
+            if data is None:
+                data = {}
+            data['filename'] = input_file
+
             r = requests.post(url,
                               headers=self.header,
-                              files=files,
                               data=data,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
