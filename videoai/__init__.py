@@ -1294,12 +1294,12 @@ class ImportData(VideoAIUser):
         url = "{0}/{1}".format(self.base_url, self.end_point)
 
         try:
-            if SIGN_REQUEST:
-                self.sign_request(url, method="POST", data=data, request=request)
-
             if data is None:
                 data = {}
             data['filename'] = input_file
+
+            if SIGN_REQUEST:
+                self.sign_request(url, method="POST", data=data, request=request)
 
             r = requests.post(url,
                               headers=self.header,
