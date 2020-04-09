@@ -46,7 +46,7 @@ parser.set_defaults(download=True)
 args = parser.parse_args()
 
 if args.face_log_image:
-    print "performing face log on image"
+    print("performing face log on image")
     face_log_image = FaceLogImage.create(email=args.email,
                                          password=args.pwd,
                                          key_file=args.key_file,
@@ -62,7 +62,7 @@ if args.face_log_image:
                                     min_size=args.min_size)
 
 elif args.face_log:
-    print "performing face log"
+    print("performing face log")
     face_log = FaceLog.create(email=args.email,
                               password=args.pwd,
                               key_file=args.key_file,
@@ -82,7 +82,7 @@ elif args.face_log:
 
 
 else:
-    print "listing tasks"
+    print("listing tasks")
     videoai = VideoAIUser.create(email=args.email,
                                  password=args.pwd,
                                  key_file=args.key_file,

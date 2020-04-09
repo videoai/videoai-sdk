@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 
 # recognition on an image
-print 'Perform authentication on {}'.format(args.gallery)
+print('Perform authentication on {}'.format(args.gallery))
 face_authenticate = FaceAuthenticate.create(key_file=args.key_file, verbose=args.verbose)
 
 results = face_authenticate.apply(gallery=args.gallery,
@@ -24,7 +24,7 @@ results = face_authenticate.apply(gallery=args.gallery,
                                   download=args.download)
 
 if results['authenticated']:
-    print 'Identity Authenticated with score {0:2f}'.format(results['score'])
+    print('Identity Authenticated with score {0:2f}'.format(results['score']))
 else:
-    print 'Identity NOT Authenticated'
+    print('Identity NOT Authenticated')
 

@@ -29,7 +29,7 @@ class TestFaceLog(unittest.TestCase):
 
         # Test on some known videos
         def test_face_log(self):
-            print "Testing face log..."
+            print("Testing face log...")
 
             test_data = [
                         TestFaceLog.TestData(video_file='busy_office.mkv', frames=103, max_frames=0, number_of_sightings=3, min_size=40),
@@ -37,11 +37,11 @@ class TestFaceLog(unittest.TestCase):
             ]
 
             for this_test in test_data:
-                print "** Testing {0} **".format(this_test.video_file)
+                print("** Testing {0} **".format(this_test.video_file))
                 response = self.do_face_log(this_test)
                 self.assertEqual(response['status'], 'success')
                 task = response['task']
-                self.assert_(task['analytic'], "face_log")
+                self.assertTrue(task['analytic'], "face_log")
                 self.assertTrue(task['complete'])
                 self.assertEqual(task['number_of_sightings'], this_test.number_of_sightings)
                 if this_test.max_frames == 0:
@@ -61,18 +61,18 @@ class TestFaceLogImage(unittest.TestCase):
 
         # Test on some known videos
         def test_face_log(self):
-            print "Testing face detection..."
+            print("Testing face detection...")
 
             test_data = { 'group.jpg': 16,
                           'KaliningradFaces.jpg': 48}
 
-            for key, value in test_data.iteritems():
-                print "** Testing {0} with expected result {1} **".format(key, value)
+            for key, value in test_data.items():
+                print("** Testing {0} with expected result {1} **".format(key, value))
                 response = self.do_face_log_image(key)
                 self.assertEqual(response['status'], 'success')
                 task = response['task']
-                print task
-                self.assert_(task['analytic'], "face_log_image")
+                print(task)
+                self.assertTrue(task['analytic'], "face_log_image")
                 self.assertTrue(task['complete'])
                 self.assertEqual(task['number_of_sightings'], value)
 

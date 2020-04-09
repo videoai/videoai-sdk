@@ -30,7 +30,7 @@ recognition = Recognition.create(key_file=args.key_file, verbose=args.verbose)
 
 # recognition on an image
 if args.recognition and args.image:
-    print 'Perform recognition on {}'.format(args.image)
+    print('Perform recognition on {}'.format(args.image))
     face_log_image = FaceLogImage.create(key_file=args.key_file, verbose=args.verbose)
     results = face_log_image.apply(image_file=args.image,
                                    download=args.download,
@@ -39,7 +39,7 @@ if args.recognition and args.image:
 
 # recognition on a video
 if args.recognition and args.video:
-    print 'Perform recognition on {}'.format(args.video)
+    print('Perform recognition on {}'.format(args.video))
     face_log = FaceLog.create(key_file=args.key_file, verbose=args.verbose)
     results = face_log.apply(video_file=args.video,
                              download=args.download,
@@ -48,31 +48,31 @@ if args.recognition and args.video:
 
 # List all subjects
 if args.subjects:
-    print "Listing all the subjects"
+    print("Listing all the subjects")
     recognition.list_subjects()
 
 # List all watchlists
 if args.watchlists:
-    print "Listing all the watchlists"
+    print("Listing all the watchlists")
     recognition.list_watchlists()
 
 
 # Delete all subjects
 if args.delete_subjects:
-    print 'Deleting all the subjects in your database'
+    print('Deleting all the subjects in your database')
     try:
         response = recognition.list_subjects()
         subjects = response['data']['subjects']
         for subject in subjects:
             subject_id = subject['subject_id']
-            print ' - deleting subject {}'.format(subject_id)
+            print(' - deleting subject {}'.format(subject_id))
             recognition.delete_subject(subject_id)
     except Exception as err:
-        print('Trouble deleting subjects', err)
+        print(('Trouble deleting subjects', err))
 
 # Create a subject
 if args.create_subject and not args.image:
-    print 'Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender)
+    print('Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender))
 
     try:
         # Lets create the subject
@@ -80,9 +80,9 @@ if args.create_subject and not args.image:
         response = recognition.create_subject(name=args.name, watchlist=args.watchlist, subject_data=subject_data)
         subject = response['data']['subject']
         subject_id = subject['subject_id']
-        print 'Created subject with id {}'.format(subject_id)
+        print('Created subject with id {}'.format(subject_id))
     except Exception as err:
-        print('Trouble creating subject', err)
+        print(('Trouble creating subject', err))
 
 
 # Create a subject from an enrollment image
@@ -106,7 +106,7 @@ def enrol_from_image(key_file, verbose, image, name, watchlist):
         subject = response['data']['subject']
         subject_id = subject['subject_id']
         subject_id = subject['subject_id']
-        print 'Created subject with id {}'.format(subject_id)
+        print('Created subject with id {}'.format(subject_id))
 
         # Now lets join a subject to a detection
         recognition.add_sighting_to_subject(face['sighting_id'], subject_id)
@@ -115,17 +115,17 @@ def enrol_from_image(key_file, verbose, image, name, watchlist):
 
 # Create a subject and add face from image
 if args.create_subject and args.image:
-    print 'Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender)
+    print('Going to create a subject with name {}, with watchlist {} and gender {}'.format(args.name, args.watchlist, args.gender))
 
     # Lets run a face-log on the image
     try:
         enrol_from_image(args.key_file, args.verbose, args.image, args.name, args.watchlist)
     except Exception as err:
-        print('Trouble creating subject with image', err)
+        print(('Trouble creating subject with image', err))
 
 # Go through all images in a directory and enroll each image as a separate subject
 if args.image_dir:
-    print 'Enrolling images in directory {}'.format(args.image_dir)
+    print('Enrolling images in directory {}'.format(args.image_dir))
 
     image_files = glob.glob("{}/*".format(args.image_dir))
     valid_images = ['.jpg', '.gif', '.png']
@@ -137,38 +137,38 @@ if args.image_dir:
         if ext not in valid_images:
             continue
         try:
-            print 'Enrolling {} from image {}'.format(name, image_file)
+            print('Enrolling {} from image {}'.format(name, image_file))
             enrol_from_image(args.key_file, args.verbose, image_file, name, args.watchlist)
         except:
             pass
 
 # Delete a subject
 if args.delete_subject:
-    print 'Deleting subject with id {}'.format(args.delete_subject)
+    print('Deleting subject with id {}'.format(args.delete_subject))
     try:
         recognition.delete_subject(args.delete_subject)
     except Exception as err:
-        print('Trouble deleting subject', err)
+        print(('Trouble deleting subject', err))
 
 
 # Add a sighting to a subject
 if args.add_sighting and args.subject_id:
-    print 'Add sighting {} to subject id {}'.format(args.add_sighting, args.subject_id)
+    print('Add sighting {} to subject id {}'.format(args.add_sighting, args.subject_id))
     try:
         recognition.add_sighting_to_subject(args.add_sighting, args.subject_id)
     except Exception as err:
-        print('Trouble adding sighting to subject', err)
+        print(('Trouble adding sighting to subject', err))
 
 # Get a thumbnaikl of a subject 
 if args.subject_thumbnail:
-    print 'Get thumbnail of a subject'.format(args.subject_thumbnail)
+    print('Get thumbnail of a subject'.format(args.subject_thumbnail))
     try:
         content = recognition.subject_thumbnail(args.subject_thumbnail)
-        print 'saving thumbnail to: subject_{}.jpg'.format(args.subject_thumbnail)	
+        print('saving thumbnail to: subject_{}.jpg'.format(args.subject_thumbnail))	
         fh = open('subject_{}.jpg'.format(args.subject_thumbnail), 'wb')
         fh.write(content)
 
     except Exception as err:
-        print('Trouble getting thumbnail of subject', err)
+        print(('Trouble getting thumbnail of subject', err))
 
 

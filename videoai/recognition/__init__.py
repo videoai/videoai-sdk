@@ -24,9 +24,10 @@ class WatchlistNotFound(Error):
 
 
 class Recognition(VideoAIUser):
-    def __init__(self, token, host, client_id, client_secret, verbose=False):
+    def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
         super(Recognition, self).__init__(token=token,
                                           host=host,
+                                          authentication_server=authentication_server,
                                           client_id=client_id,
                                           client_secret=client_secret,
                                           verbose=verbose)
@@ -58,7 +59,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.content
 
     def get_sighting(self, sighting_id, request=None):
@@ -67,7 +68,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
     def hide_sighting(self, sighting_id, request=None):
@@ -76,7 +77,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
 
@@ -86,7 +87,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
     def reject_sighting_identity(self, sighting_id, subject_id, request=None):
@@ -95,7 +96,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
     def sighting_thumbnail(self, sighting_id, request=None):
@@ -107,7 +108,7 @@ class Recognition(VideoAIUser):
         if r.status_code != 200:
             return ""
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.content
 
     def set_thumbnail(self, subject_id, sighting_id, request=None):
@@ -116,7 +117,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="POST", request=request)
         r = requests.post(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
     def sighting_acknowledge(self, sighting_id, request=None):
@@ -125,7 +126,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.content
 
     def sighting_true(self, sighting_id, request=None):
@@ -134,7 +135,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.content
 
     def sighting_error(self, sighting_id, request=None):
@@ -143,7 +144,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=None, method="GET", request=request)
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.content
 
     def add_sighting(self, data, request=None):
@@ -153,7 +154,7 @@ class Recognition(VideoAIUser):
             self.sign_request(url, data=data, method="POST", request=request)
         r = requests.post(url, headers=self.header, data=data,  allow_redirects=True, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
         return r.json()
 
 
@@ -181,19 +182,19 @@ class Recognition(VideoAIUser):
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
             d = dict()            
-            for key,value in subject_data.iteritems():
+            for key,value in subject_data.items():
                 if isinstance(value, int):
                     d['{}::int'.format(key)] = str(value)
                 elif isinstance(value, float):
                     d['{}::float'.format(key)] = str(value)
-                elif isinstance(value, basestring): # str or unicode
+                elif isinstance(value, str): # str or unicode
                     d['{}::string'.format(key)] = value 
                 elif isinstance(value, datetime.date):
                     d['{}::date'.format(key)] = value.isoformat()
                 elif isinstance(value, list):
-                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                    d['{}::list'.format(key)] = [str(i) for i in value]
                 else:
-                    print 'Unknown value type'
+                    print('Unknown value type')
             data['subject_data'] = json.dumps(d, ensure_ascii=False)
 
 
@@ -212,7 +213,7 @@ class Recognition(VideoAIUser):
         r = requests.post(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
             # if r.json()['status'] != 'success':
             # raise Exception("Create subject failed: {}". format(r.json()['message']))
@@ -243,11 +244,11 @@ class Recognition(VideoAIUser):
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Edit subject failed: {}". format(r.json()['message']))
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         return r.json()
 
@@ -265,19 +266,19 @@ class Recognition(VideoAIUser):
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
             d = dict()            
-            for key,value in subject_data.iteritems():
+            for key,value in subject_data.items():
                 if isinstance(value, int):
                     d['{}::int'.format(key)] = str(value)
                 elif isinstance(value, float):
                     d['{}::float'.format(key)] = str(value)
-                elif isinstance(value, basestring): # str or unicode
+                elif isinstance(value, str): # str or unicode
                     d['{}::string'.format(key)] = value 
                 elif isinstance(value, datetime.date):
                     d['{}::date'.format(key)] = value.isoformat()
                 elif isinstance(value, list):
-                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                    d['{}::list'.format(key)] = [str(i) for i in value]
                 else:
-                    print 'Unknown value type'
+                    print('Unknown value type')
             data['subject_data'] = json.dumps(d, ensure_ascii=False)
 
 
@@ -286,11 +287,11 @@ class Recognition(VideoAIUser):
         r = requests.put(url, headers=self.header, data=data, allow_redirects=True, verify=VERIFY_SSL)
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Edit subject failed: {}". format(r.json()['message']))
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
@@ -308,11 +309,11 @@ class Recognition(VideoAIUser):
 
         r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Get subject failed: {}". format(r.json()['message']))
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         # We should return the complete json containing a status to be able to react to error
         # @@ TODO lets try it
@@ -332,10 +333,10 @@ class Recognition(VideoAIUser):
         r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Deleted subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -359,7 +360,7 @@ class Recognition(VideoAIUser):
                 self.delete_subject(subject_id)
                 subjects_deleted.append(subject_id)
             except:
-                print 'Trouble deleting subject "{}"'.format(subject_id)
+                print('Trouble deleting subject "{}"'.format(subject_id))
 
         return subjects_deleted
 
@@ -369,12 +370,12 @@ class Recognition(VideoAIUser):
         :return:
         """
 
-        url = u"{}/{}/deleted".format(self.base_url, self.subject)
+        url = "{}/{}/deleted".format(self.base_url, self.subject)
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
-                    url += sep + v + "=" + unicode(data[v])
+                    url += sep + v + "=" + str(data[v])
                     sep = "&"
 
         if SIGN_REQUEST:
@@ -383,10 +384,10 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -409,17 +410,17 @@ class Recognition(VideoAIUser):
 
         # if we have a valid watchlist then we try and use it
         if watchlist:
-            wl_ids.append(unicode(watchlist))
+            wl_ids.append(str(watchlist))
 
         if watchlist_data:
             wl_ids.extend(watchlist_data)
 
-        url = u"{}/{}/{}/{}?watchlist_data={}".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
+        url = "{}/{}/{}/{}?watchlist_data={}".format(self.base_url, self.subject, page, number_per_page, json.dumps(wl_ids))
         sep = "&"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
-                    url += sep + v + "=" + unicode(data[v])
+                    url += sep + v + "=" + str(data[v])
                     sep = "&"
 
         if SIGN_REQUEST:
@@ -428,10 +429,10 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -440,7 +441,7 @@ class Recognition(VideoAIUser):
 
     def get_updated_subject_from_list_and_timestamp(self, subject_list, timestamp, request=None):
 
-        url = u"{}/{}/updated".format(self.base_url, self.subject)
+        url = "{}/{}/updated".format(self.base_url, self.subject)
 
         data = {'subject_list': json.dumps(subject_list), 'timestamp': timestamp}
 
@@ -450,10 +451,10 @@ class Recognition(VideoAIUser):
         r = requests.post(url, data=data, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -461,14 +462,14 @@ class Recognition(VideoAIUser):
         return r.json()
 
     def get_subject_status(self, verbose=False, last_update=None, request=None):
-        url = u"{}/subject_status".format(self.base_url)
+        url = "{}/subject_status".format(self.base_url)
 
         data = {'verbose': verbose}
         if last_update is not None:
             try:
                 data['last_update'] = int(last_update)
             except Exception as e:
-                print("Exception in SDK get_subject_status: last_update is not an integer ({})".format(last_update))
+                print(("Exception in SDK get_subject_status: last_update is not an integer ({})".format(last_update)))
 
         if SIGN_REQUEST:
             self.sign_request(url, data=data, method="POST", request=request)
@@ -476,10 +477,10 @@ class Recognition(VideoAIUser):
         r = requests.post(url, data=data, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Create subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -487,7 +488,7 @@ class Recognition(VideoAIUser):
         return r.json()
 
     def get_descriptor(self, description_id, with_thumbnail=False, request=None):
-        url = u"{}/descriptor/{}?with_thumbnail={}".format(self.base_url, description_id, with_thumbnail)
+        url = "{}/descriptor/{}?with_thumbnail={}".format(self.base_url, description_id, with_thumbnail)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
@@ -500,13 +501,13 @@ class Recognition(VideoAIUser):
                 if md5 != r.headers['md5']:
                     print("MD5  NOT  OK")
         except Exception as e:
-            print("Exception in SDK get_descriptor while checking md5 ({})".format(e))
+            print(("Exception in SDK get_descriptor while checking md5 ({})".format(e)))
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             raise Exception("Get description failed: {}".format(r.json()['message']))
 
         return r.json()
@@ -517,7 +518,7 @@ class Recognition(VideoAIUser):
         :param description_id: The description you want to get
         :return:
         """
-        url = u"{}/descriptors_number".format(self.base_url, self.description)
+        url = "{}/descriptors_number".format(self.base_url, self.description)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
@@ -526,10 +527,10 @@ class Recognition(VideoAIUser):
 
         #self.verbose = True
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             raise Exception("Get description number failed: {}".format(r.json()['message']))
 
         return r.json()
@@ -543,7 +544,7 @@ class Recognition(VideoAIUser):
         :param description_id: The description you want to get 
         :return:
         """
-        url = u"{}/{}/{}".format(self.base_url, self.description, description_id)
+        url = "{}/{}/{}".format(self.base_url, self.description, description_id)
 
         if SIGN_REQUEST:
             self.sign_request(url, data=None, method="GET", request=request)
@@ -552,10 +553,10 @@ class Recognition(VideoAIUser):
         
         self.verbose=True
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             raise Exception("Get description failed: {}". format(r.json()['message']))
 
         return r.json()
@@ -574,7 +575,7 @@ class Recognition(VideoAIUser):
         :param base64: Get base64 data of the description
         :return:
         """
-        url = u"{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
+        url = "{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
         data = {
             'base64': str(base64)
         }
@@ -588,10 +589,10 @@ class Recognition(VideoAIUser):
         r = requests.get(url, headers=self.header, data=data, verify=VERIFY_SSL)
         
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             raise Exception("List descriptions failed: {}". format(r.json()['message']))
 
         return r.json()
@@ -607,10 +608,10 @@ class Recognition(VideoAIUser):
         r = requests.post(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -626,10 +627,10 @@ class Recognition(VideoAIUser):
         r = requests.post(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Add sighting to subject failed: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -641,12 +642,12 @@ class Recognition(VideoAIUser):
         Get sightings
         :return:
         """
-        url = u"{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
+        url = "{}/{}/{}/{}".format(self.base_url, self.sighting, page, number_per_page)
         sep = "?"
         if data is not None and len(data) > 0:
             for i, v in enumerate(data):
                 if data[v] is not None:
-                    url += sep + v + "=" + unicode(data[v])
+                    url += sep + v + "=" + str(data[v])
                     sep = "&"
 
         if SIGN_REQUEST:
@@ -661,7 +662,7 @@ class Recognition(VideoAIUser):
             return json.dumps(data)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
             # raise Exception("List sightings: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -678,10 +679,10 @@ class Recognition(VideoAIUser):
         r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
             # raise Exception("Failed to delete description: {}". format(r.json()['message']))
 
         # We should return the complete json containing a status to be able to react to error
@@ -699,11 +700,11 @@ class Recognition(VideoAIUser):
 
         r = requests.get(url, headers=self.header, verify=VERIFY_SSL)
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         json_resp = r.json()
         if json_resp['status'] != 'success':
-            print r.text
+            print(r.text)
 
         if json_resp['status'] == 'success' and ignore_unknown:
             watchlists = []
@@ -740,10 +741,10 @@ class Recognition(VideoAIUser):
         r = requests.delete(url, headers=self.header, verify=VERIFY_SSL)
 
         if self.verbose:
-            print print_http_response(r)
+            print(print_http_response(r))
 
         if r.json()['status'] != 'success':
-            print r.text
+            print(r.text)
         return r.json()
 
     def watchlist_id(self, watchlist_name):
@@ -788,7 +789,7 @@ class Recognition(VideoAIUser):
                 response = requests.post(url, w, headers=self.header, verify=VERIFY_SSL)
                 json_response = json.loads(response.text)
                 if self.verbose:
-                    print print_http_response(response)
+                    print(print_http_response(response))
 
         if not need_to_create:
             return True, json.dumps({'status': 'success'}), None
@@ -803,20 +804,6 @@ class Recognition(VideoAIUser):
         :return:
         '''
 
-        # Need some information from the key-file
-        key_file = ''
-        if not key_file:
-            home = expanduser("~")
-            key_file = os.path.join(home, '.videoai')
-        parser = ConfigParser()
-        parser.read(key_file)
-
-        try:
-            authentication_server = get_parameter(param=None, name='authentication_server',
-                                                  parser=parser)
-        except:
-            raise
-
         watchlist_list = self.list_watchlists()
         if watchlist_list['status'] == 'success':
             watchlist_list = watchlist_list['data']['watchlists']
@@ -827,12 +814,12 @@ class Recognition(VideoAIUser):
             built_watchlist.append((item for item in watchlist_list if item["name"] == name).next()['id'])
 
         data = {'email': email, 'watchlist': json.dumps(built_watchlist)}
-        url = '{}/auth/assign_watchlist_to_user_for_unittest'.format(authentication_server)
+        url = '{}/auth/assign_watchlist_to_user_for_unittest'.format(self.authentication_server)
         self.sign_request(url=url, data=data, method='POST', request=request)
         response = requests.post(url, data, headers=self.header, verify=VERIFY_SSL)
         json_response = json.loads(response.text)
         if self.verbose:
-            print print_http_response(response)
+            print(print_http_response(response))
 
         if response.status_code == 200:
             return True, response.content, response.headers

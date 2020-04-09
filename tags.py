@@ -21,12 +21,12 @@ recognition = Recognition(host=args.host, key_file=args.key_file, verbose=args.v
 
 # List all tags
 if args.tags:
-    print "Listing all the tags"
+    print("Listing all the tags")
     tags = recognition.list_tags()
 
 # List tags
 if args.tagged:
-    print "Listing all the tags"
+    print("Listing all the tags")
     tags = recognition.list_tagged(args.tag, args.object)
 
 # Generic delete tag
@@ -34,19 +34,19 @@ elif args.delete:
     try:
         recognition.delete_tag(tag_name=args.tag, object_id=args.object)
     except:
-        print 'Unable to delete tag id'
+        print('Unable to delete tag id')
 
 # Generic update tags
 elif args.create:
     try:
         recognition.create_tag(args.tag)
     except:
-        print 'Failed to create tag {}'.format(args.tag)
+        print('Failed to create tag {}'.format(args.tag))
 
 # Generic update tags
 elif args.default:
     try:
         recognition.default_tags()
     except:
-        print 'Failed to create default tags'
+        print('Failed to create default tags')
 

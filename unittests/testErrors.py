@@ -13,12 +13,12 @@ def print_http_response(r):
     :param r: The response of a request
     :return:
     '''
-    print "HTTP/1.0 {} OK".format(r.status_code)
-    print "Content-Type: {}".format(r.headers['content-type'])
-    print "Content-Length: {}".format(r.headers['content-length'])
-    print "Server: {}".format(r.headers['server'])
-    print "Date: {}".format(r.headers['date'])
-    print r.text
+    print("HTTP/1.0 {} OK".format(r.status_code))
+    print("Content-Type: {}".format(r.headers['content-type']))
+    print("Content-Length: {}".format(r.headers['content-length']))
+    print("Server: {}".format(r.headers['server']))
+    print("Date: {}".format(r.headers['date']))
+    print(r.text)
 
 def get_key():
     home = os.path.expanduser("~")
