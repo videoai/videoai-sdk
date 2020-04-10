@@ -130,7 +130,7 @@ def sign_request(url,
     if request is not None:
         initial_user_agent = "user_agent={}".format(request.user_agent).replace(',', ';')
     if oauth_nonce is None:
-        oauth_nonce = oauth.generate_nonce()
+        oauth_nonce = oauth.generate_nonce(length=64)
     if oauth_timestamp is None:
         oauth_timestamp = str(int(time.time()))
 
