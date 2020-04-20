@@ -501,6 +501,68 @@ class VideoAIUser(object):
             return False, None, None
 
 
+class VerifyAssure(VideoAIUser):
+    def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
+        super(VerifyAssure, self).__init__(token=token, host=host, authentication_server=authentication_server,
+                                               client_id=client_id, client_secret=client_secret, verbose=verbose)
+        self.end_point = 'verify_assure'
+
+    def request(self, filename_on_disc, options, request=None):
+
+        # File has already been uploaded on disc, use filename
+        file_size = os.path.getsize(filename_on_disc) / 1000000.0
+        print('Requested Verify Assure on {0} ({1} Mb)'.format(filename_on_disc, file_size))
+
+        data = {'compare_threshold': 0.6}
+
+        if not os.path.isfile(filename_on_disc):
+            raise FailedAPICall('Input file \'{}\' does not exists'.format(filename_on_disc))
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if filename_on_disc:
+                data['file_image_name'] = filename_on_disc
+
+            data.update(options)
+
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+            r = requests.post(url, headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('Verify Assure')
+
+        if self.verbose:
+            print(print_http_response(r))
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("Verify Assure request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def apply(self, filename_on_disc, options=None, wait_until_finished=True,
+              request=None):
+
+        json_data = self.request(filename_on_disc=filename_on_disc, options=options, request=request)
+
+        if not wait_until_finished:
+            return json_data
+
+        json_data = self.wait(json_data)
+
+        task = json_data['task']
+        if not task['success']:
+            print('Failed FaceLogImage: {0}'.format(task['message']))
+            return task
+
+        return task
+
+
+
 class VideoAIClient(VideoAIUser):
     def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
         super(VideoAIClient, self).__init__(token=token, host=host, authentication_server=authentication_server,
@@ -1271,8 +1333,6 @@ class ImportData(VideoAIUser):
         self.end_point = 'import_data'
 
     def request(self, input_file, data=None, request=None):
-
-        print("INPUT FILE {}".format(input_file))
 
         if not os.path.isfile(input_file):
             raise FailedAPICall('Input file \'{}\' does not exists'.format(input_file))
