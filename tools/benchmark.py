@@ -153,27 +153,27 @@ class ImportImageDir:
         if id_list:
             with open(id_list, 'r') as id_file:
                 for line in id_file:
+                    the_id = line.strip()
                     if subject_skip > 0 and skipped < subject_skip:
                         skipped += 1
                         if args.verbose:
-                            print('Skipping {}: {}'.format(skipped, qid))
+                            print('Skipping {}: {}'.format(skipped, the_id))
                         continue
-                    id = line.strip()
-                    qid_image_dir = os.path.join(image_dir, qid)
-                    if not os.path.exists(qid_image_dir):
-                        print("Image Dir {} does not exist".format(qid_image_dir))
+                    id_image_dir = os.path.join(image_dir, the_id)
+                    if not os.path.exists(id_image_dir):
+                        print("Image Dir {} does not exist".format(id_image_dir))
                         continue
-                    files = [f for f in listdir(qid_image_dir) if isfile(join(qid_image_dir, f))]
-                    import_data[id] = []
+                    files = [f for f in listdir(id_image_dir) if isfile(join(id_image_dir, f))]
+                    import_data[the_id] = []
                     subject_images = 0
                     for file in files:
                         (image_name, ext) = splitext(file)
                         subject_images += 1
-                        import_data[id].append(join(qid_image_dir, file))
+                        import_data[the_id].append(join(id_image_dir, file))
                         if subject_images >= max_faces_per_subject > 0:
                             break
                     if args.verbose:
-                        print("Subject {} Images {}".format(id, subject_images))
+                        print("Subject {} Images {}".format(the_id, subject_images))
                     if len(import_data) >= number_of_subjects > 0:
                         break
 
