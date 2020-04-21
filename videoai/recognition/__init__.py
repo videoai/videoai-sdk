@@ -181,22 +181,24 @@ class Recognition(VideoAIUser):
 
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
-            d = dict()            
-            for key,value in subject_data.items():
+            d = dict()
+            for key, value in subject_data.iteritems():
                 if isinstance(value, int):
                     d['{}::int'.format(key)] = str(value)
                 elif isinstance(value, float):
                     d['{}::float'.format(key)] = str(value)
-                elif isinstance(value, str): # str or unicode
-                    d['{}::string'.format(key)] = value 
+                elif isinstance(value, basestring):  # str or unicode
+                    if len(key.split('::')) == 2:
+                        d[key] = value
+                    else:
+                        d['{}::string'.format(key)] = value
                 elif isinstance(value, datetime.date):
                     d['{}::date'.format(key)] = value.isoformat()
                 elif isinstance(value, list):
-                    d['{}::list'.format(key)] = [str(i) for i in value]
+                    d['{}::list'.format(key)] = [unicode(i) for i in value]
                 else:
-                    print('Unknown value type')
+                    print 'Unknown value type'
             data['subject_data'] = json.dumps(d, ensure_ascii=False)
-
 
         if sighting_id:
             data['sighting_id'] = sighting_id
