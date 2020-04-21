@@ -197,7 +197,7 @@ class Recognition(VideoAIUser):
                 elif isinstance(value, list):
                     d['{}::list'.format(key)] = [unicode(i) for i in value]
                 else:
-                    print 'Unknown value type'
+                    print ('Unknown value type')
             data['subject_data'] = json.dumps(d, ensure_ascii=False)
 
         if sighting_id:
