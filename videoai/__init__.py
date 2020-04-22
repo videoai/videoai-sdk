@@ -3,6 +3,7 @@ import base64
 import requests
 import oauth2 as oauth
 import time
+import datetime
 from os.path import expanduser
 from configparser import ConfigParser
 import json
@@ -561,6 +562,67 @@ class VerifyAssure(VideoAIUser):
 
         return task
 
+    def create_subject_from_images(self, filenames, name, subject_data,
+                                    watchlist_data, location, request=None):
+
+        self.end_point = 'verify_assure_enrollment'
+
+        data = {
+            'min_size': 80,
+            'recognition': False
+        }
+
+        data['name'] = name
+        data['images'] = json.dumps(filenames)
+
+        # for subject data we need to convert whatever object to a str/unicode
+        if subject_data:
+            d = dict()
+            for key, value in subject_data.iteritems():
+                if isinstance(value, int):
+                    d['{}::int'.format(key)] = str(value)
+                elif isinstance(value, float):
+                    d['{}::float'.format(key)] = str(value)
+                elif isinstance(value, basestring):  # str or unicode
+                    if len(key.split('::')) == 2:
+                        d[key] = value
+                    else:
+                        d['{}::string'.format(key)] = value
+                elif isinstance(value, datetime.date):
+                    d['{}::date'.format(key)] = value.isoformat()
+                elif isinstance(value, list):
+                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                else:
+                    print 'Unknown value type'
+            data['subject_data'] = json.dumps(d, ensure_ascii=False)
+
+        if watchlist_data:
+            data['watchlist_data'] = json.dumps(watchlist_data)
+
+        if location is not None:
+            data['location'] = location
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        #print("DATA {}".format(data))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print(print_http_response(r))
+
+        except Exception as err:
+            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
+
+        return json_data
 
 
 class VideoAIClient(VideoAIUser):
