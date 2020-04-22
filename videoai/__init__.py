@@ -338,10 +338,10 @@ class VideoAIUser(object):
         url = "{0}/{1}/{2}".format(self.base_url, task['analytic'], task['job_id'])
 
         if task['complete']:
-            return task
+            return response
 
         while not task['complete']:
-            time.sleep(0.5)
+            time.sleep(0.2)
             if SIGN_REQUEST:
                 self.sign_request(url, data=None, method="GET", request=request)
 

@@ -9,7 +9,8 @@ parser.add_argument('--image-dir', dest='image_dir', help='Enroll all images in 
 parser.add_argument('--video', dest='video', help='specify a video to use')
 parser.add_argument('--recognition', dest='recognition', action='store_true', help='Perform recognition on the video '
                                                                                    'or image.')
-parser.add_argument('--key-file', dest='key_file', help='use this file for your keys (otherwise defaults ~/.video)')
+parser.add_argument('--key-file', dest='key_file', default=os.path.join(os.path.expanduser("~"), ".videoai"),  help='Path to your develper keys.')
+parser.add_argument('--authentication-server', dest='authentication_server', default='http://192.168.86.197:10000', help='The authentication server to use.')
 parser.add_argument('--name', dest='name', help='The subject name.')
 parser.add_argument('--create-subject', dest='create_subject', action='store_true', help='Create subject from image.')
 parser.add_argument('--delete-subjects', dest='delete_subjects', action='store_true', help='delete all subjects')
@@ -26,12 +27,13 @@ parser.add_argument('--download', dest='download', action='store_true', help='Do
 parser.set_defaults(download=False)
 args = parser.parse_args()
 
-recognition = Recognition.create(key_file=args.key_file, verbose=args.verbose)
+recognition = Recognition.create(key_file=args.key_file, authentication_server=args.authentication_server, verbose=args.verbose)
+face_log_image = FaceLogImage.create(key_file=args.key_file, authentication_server=args.authentication_server, verbose=args.verbose)
+face_log = FaceLog.create(key_file=args.key_file, authentication_server=args.authentication_server, verbose=args.verbose)
 
 # recognition on an image
 if args.recognition and args.image:
     print('Perform recognition on {}'.format(args.image))
-    face_log_image = FaceLogImage.create(key_file=args.key_file, verbose=args.verbose)
     results = face_log_image.apply(image_file=args.image,
                                    download=args.download,
                                    recognition=True,
@@ -40,7 +42,6 @@ if args.recognition and args.image:
 # recognition on a video
 if args.recognition and args.video:
     print('Perform recognition on {}'.format(args.video))
-    face_log = FaceLog.create(key_file=args.key_file, verbose=args.verbose)
     results = face_log.apply(video_file=args.video,
                              download=args.download,
                              recognition=True,
@@ -88,7 +89,6 @@ if args.create_subject and not args.image:
 # Create a subject from an enrollment image
 def enrol_from_image(key_file, verbose, image, name, watchlist):
     try:
-        face_log_image = FaceLogImage.create(key_file=args.key_file, verbose=args.verbose)
         result = face_log_image.apply(image_file=image,
                                       download=False,
                                       min_size=80)
