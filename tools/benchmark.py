@@ -3,6 +3,7 @@ import os
 from videoai import FaceLogImage, DeleteSubjects
 from videoai.recognition import Recognition
 from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import json
 import random
 import time
@@ -11,6 +12,7 @@ from os.path import isfile, join, splitext
 import argparse
 from addict import Dict
 import pprint
+from tqdm import tqdm
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -257,11 +259,16 @@ class ImportImageDir:
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
 
-            for subject, images in import_data.items():
+            print("Creating jobs..")
+            for subject, images in tqdm(import_data.items()):
                 for image in images:
                     results.append(executor.submit(search_from_image,
                                                    self.face_log_image,
                                                    image))
+            print("Processing jobs...")
+            for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
+                pass
+
             executor.shutdown(wait=True)
 
         success = 0
