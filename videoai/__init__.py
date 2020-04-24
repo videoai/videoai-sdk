@@ -624,6 +624,22 @@ class VerifyAssure(VideoAIUser):
 
         return json_data
 
+    def task(self, job_id, request=None):
+        '''
+        Get a specific task
+        :return:
+        '''
+        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
+
+        if SIGN_REQUEST:
+            self.sign_request(url, data=None, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
+        if self.verbose:
+            print_http_response(r)
+
+        return r.json()
+
 
 class VideoAIClient(VideoAIUser):
     def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
