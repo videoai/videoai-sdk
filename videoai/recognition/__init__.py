@@ -539,19 +539,25 @@ class Recognition(VideoAIUser):
 
     def get_description(self,
                         description_id,
+                        source_image=True,
                         request=None
     ):
         """
         List all the descriptions in the database
         :param description_id: The description you want to get 
+        :param source_image: Get image used to generate description, as part of description
         :return:
         """
         url = "{}/{}/{}".format(self.base_url, self.description, description_id)
 
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET", request=request)
+        data = {
+            'source_image': str(source_image)
+        }
 
-        r = requests.get(url, headers=self.header, data=None, verify=VERIFY_SSL)
+        if SIGN_REQUEST:
+            self.sign_request(url, data=data, method="GET", request=request)
+
+        r = requests.get(url, headers=self.header, data=data, verify=VERIFY_SSL)
         
         self.verbose=True
         if self.verbose:
@@ -569,17 +575,20 @@ class Recognition(VideoAIUser):
                           number_per_page=1000, 
                           updated=None,
                           base64=False,
+                          source_image=True,
                           request=None
     ):
         """
         List all the descriptions in the database
         :param updated: Time in UTC . 
         :param base64: Get base64 data of the description
+        :param source_image: Get image used to generate description if downloading the description
         :return:
         """
         url = "{}/{}/{}/{}".format(self.base_url, self.description, page, number_per_page)
         data = {
-            'base64': str(base64)
+            'base64': str(base64),
+            'source_image': str(source_image)
         }
 
         if updated is not None:
