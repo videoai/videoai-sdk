@@ -219,6 +219,9 @@ class ImportImageDir:
         # get a map of database id to videoai subject_id
         subjects = Dict()
         for result in results:
+            if 'data' not in result.result():
+                print('No data in results')
+                continue
             subject = result.result()['data']['subject']
             subjects[subject['name']] = subject['subject_id']
 
