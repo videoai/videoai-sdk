@@ -213,14 +213,21 @@ class ImportImageDir:
         # Make sure all subjects appear in database
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            for subject, faces in import_data.items():
+            print("Creating 'add subject' jobs..")
+            for subject, faces in tqdm(import_data.items()):
                 results.append(executor.submit(create_subject, self.recognition, subject,
                                                random.choice(permitted_watchlists)))
+
+            print("Processing 'add subject' jobs...")
+            for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
+                pass
+
             executor.shutdown(wait=True)
 
         # get a map of database id to videoai subject_id
         subjects = Dict()
-        for result in results:
+        print("Processing results...")
+        for result in tqdm(results):
             if 'data' not in result.result():
                 print('No data in results')
                 continue
@@ -231,8 +238,8 @@ class ImportImageDir:
         number_of_faces = 0
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
-
-            for subject_id, smartvisface_subject_id in subjects.items():
+            print("Creating add image jobs.. ")
+            for subject_id, smartvisface_subject_id in tqdm(subjects.items()):
                 images = import_data[subject_id]
                 for image in images:
                     results.append(executor.submit(enrol_from_image,
@@ -240,6 +247,11 @@ class ImportImageDir:
                                                    self.recognition,
                                                    smartvisface_subject_id,
                                                    image))
+
+            print("Processing 'add image' jobs...")
+            for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
+                pass
+
             executor.shutdown(wait=True)
 
         success = 0
