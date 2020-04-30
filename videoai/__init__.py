@@ -562,8 +562,109 @@ class VerifyAssure(VideoAIUser):
 
         return task
 
-    def create_subject_from_images(self, filenames, name, subject_data,
-                                    watchlist_data, location, request=None):
+    def search_from_image(self, image_file, options, request=None):
+
+        data = {'compare_threshold': 0.6}
+
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            files = {'image': open("{0}".format(image_file), mode='rb')}
+
+            data.update(options)
+
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+            r = requests.post(url, headers=self.header,
+                              data=data,
+                              files=files,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('Verify Assure')
+
+        if self.verbose:
+            print(print_http_response(r))
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("Verify Assure request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def create_subject_from_image_files(self, images, name, subject_data,
+                                        watchlist_data, location, request=None):
+
+        self.end_point = 'verify_assure_enrollment'
+
+        files = []
+        if isinstance(images, list):
+            for image in images:
+                files.append(('images', ('{}'.format(image), open("{0}".format(image), mode='rb'), 'image/*')))
+        else:
+            files.append(('images', ('{}'.format(images), open("{0}".format(images), mode='rb'), 'image/*')))
+
+        data = {
+            'min_size': 80,
+            'recognition': False
+        }
+
+        data['name'] = name
+
+        # for subject data we need to convert whatever object to a str/unicode
+        if subject_data:
+            d = dict()
+            for key, value in subject_data.iteritems():
+                if isinstance(value, int):
+                    d['{}::int'.format(key)] = str(value)
+                elif isinstance(value, float):
+                    d['{}::float'.format(key)] = str(value)
+                elif isinstance(value, basestring):  # str or unicode
+                    if len(key.split('::')) == 2:
+                        d[key] = value
+                    else:
+                        d['{}::string'.format(key)] = value
+                elif isinstance(value, datetime.date):
+                    d['{}::date'.format(key)] = value.isoformat()
+                elif isinstance(value, list):
+                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                else:
+                    print 'Unknown value type'
+            data['subject_data'] = json.dumps(d, ensure_ascii=False)
+
+        if watchlist_data:
+            data['watchlist_data'] = json.dumps(watchlist_data)
+
+        if location is not None:
+            data['location'] = location
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+        #print("URL {} data {} files {}".format(url, data, files))
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              files=files,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if self.verbose:
+                print(print_http_response(r))
+
+        except Exception as err:
+            print("ERR: {}".format(err))
+            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
+
+        return json_data
+
+    def create_subject_from_filenames(self, filenames, name, subject_data,
+                                        watchlist_data, location, request=None):
 
         self.end_point = 'verify_assure_enrollment'
 
@@ -573,7 +674,7 @@ class VerifyAssure(VideoAIUser):
         }
 
         data['name'] = name
-        data['images'] = json.dumps(filenames)
+        data['image_file_names'] = json.dumps(filenames)
 
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
