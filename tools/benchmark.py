@@ -13,6 +13,7 @@ import argparse
 from addict import Dict
 import pprint
 from tqdm import tqdm
+import logging as logger
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -61,7 +62,7 @@ def search_from_image(face_log_image, image_path, compare_threshold=0.55, top_n=
             print('Searching from image {}'.format(image_path))
 
         if not os.path.exists(image_path):
-            print("Image path does not exist {}".format(image_path))
+            logger.warning('Image path does not exist {}'.format(image_path))
             return False
 
         results = face_log_image.apply(image_file=image_path,
@@ -74,7 +75,7 @@ def search_from_image(face_log_image, image_path, compare_threshold=0.55, top_n=
     except Exception as e:
         if args.verbose:
             pp.pprint(results)
-        print('Exception caught {}: {}'.format(e, image_path))
+        logger.warning('Exception caught {}: {}'.format(e, image_path))
         return False
 
 
@@ -94,7 +95,7 @@ def enrol_from_image(face_log_image, recognition, subject_id, image_path):
             print('Enrolling subject {} from image {}'.format(subject_id, image_path))
 
         if not os.path.exists(image_path):
-            print("Image path does not exist {}".format(image_path))
+            logger.warning('Image path does not exist: {}'.format(image_path))
             return False
 
         results = face_log_image.apply(image_file=image_path,
@@ -105,7 +106,7 @@ def enrol_from_image(face_log_image, recognition, subject_id, image_path):
 
         # if we find more than one face we are a bit screwed
         if results['number_of_sightings'] != 1:
-            print('Too many of too few sightings {}'.format(results['number_of_sightings']))
+            logger.info('Too many or too few sightings {}: {}'.format(image_path, results['number_of_sightings']))
             return False
 
         sighting = results['sightings'][0]
@@ -213,8 +214,7 @@ class ImportImageDir:
         # Make sure all subjects appear in database
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            print("Creating 'add subject' jobs..")
-            for subject, faces in tqdm(import_data.items()):
+            for subject, faces in import_data.items():
                 results.append(executor.submit(create_subject, self.recognition, subject,
                                                random.choice(permitted_watchlists)))
 
@@ -226,8 +226,7 @@ class ImportImageDir:
 
         # get a map of database id to videoai subject_id
         subjects = Dict()
-        print("Processing results...")
-        for result in tqdm(results):
+        for result in results:
             if 'data' not in result.result():
                 print('No data in results')
                 continue
@@ -238,8 +237,7 @@ class ImportImageDir:
         number_of_faces = 0
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            print("Creating add image jobs.. ")
-            for subject_id, smartvisface_subject_id in tqdm(subjects.items()):
+            for subject_id, smartvisface_subject_id in subjects.items():
                 images = import_data[subject_id]
                 for image in images:
                     results.append(executor.submit(enrol_from_image,
@@ -248,7 +246,7 @@ class ImportImageDir:
                                                    smartvisface_subject_id,
                                                    image))
 
-            print("Processing 'add image' jobs...")
+            print("Processing 'enrollment' jobs...")
             for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
                 pass
 
@@ -271,13 +269,12 @@ class ImportImageDir:
         results = []
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
 
-            print("Creating jobs..")
-            for subject, images in tqdm(import_data.items()):
+            for subject, images in import_data.items():
                 for image in images:
                     results.append(executor.submit(search_from_image,
                                                    self.face_log_image,
                                                    image))
-            print("Processing jobs...")
+            print("Processing 'searching' jobs...")
             for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
                 pass
 
@@ -331,8 +328,15 @@ parser.add_argument('--subject_skip', dest='subject_skip', type=int, default=0, 
 parser.add_argument('--max-images', dest='max_images', type=int, default=-1, help='Maximum number of images per subject.')
 parser.add_argument('--iterations', dest='iterations', type=int, default=1, help='Number of times to iterate over data.')
 parser.add_argument('--enrol', dest='enrol', action='store_true', help='Enrol subjects instead of searching them.')
+parser.add_argument('--log-file', dest='log_file', default='benchmark.log', help='Write logs to this file.')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose.')
 args = parser.parse_args()
+
+logger.basicConfig(filename=args.log_file,
+                   level=logger.INFO,
+                   format='%(asctime)s;%(levelname)s; %(message)s',
+                   datefmt='%Y-%m-%d %H:%M:%S')
+logger.info(args)
 
 importer = ImportImageDir()
 
@@ -369,10 +373,14 @@ for i in range(0, args.iterations):
     results.total_success += success
     results.total_failure += failure
     results.total_time += seconds
-    print("iteration, {}, success, {}, failure, {}, total_time, {}, images_per_second, {}".format(i, success, failure, seconds, (success+failure)/seconds))
+    msg = "iteration, {}, success, {}, failure, {}, total_time, {}, images_per_second, {}".format(i, success, failure, seconds, (success+failure)/seconds)
+    logger.info(msg)
+    print(msg)
 
 avg_success = results.total_success/args.iterations
 avg_failure = results.total_failure/args.iterations
 avg_time = results.total_time/args.iterations
-print("iteration, avg, success, {}, failure, {}, total_time, {}, images_per_second, {}".format(avg_success, avg_failure, avg_time, (avg_success+avg_failure)/avg_time))
+msg = "iteration, avg, success, {}, failure, {}, total_time, {}, images_per_second, {}".format(avg_success, avg_failure, avg_time, (avg_success+avg_failure)/avg_time)
+logger.info(msg)
+print(msg)
 

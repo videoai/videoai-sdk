@@ -131,7 +131,7 @@ def sign_request(url,
     if request is not None:
         initial_user_agent = "user_agent={}".format(request.user_agent).replace(',', ';')
     if oauth_nonce is None:
-        oauth_nonce = oauth.generate_nonce(length=64)
+        oauth_nonce = oauth.generate_nonce(length=10)
     if oauth_timestamp is None:
         oauth_timestamp = str(int(time.time()))
 
@@ -562,7 +562,7 @@ class VerifyAssure(VideoAIUser):
 
         return task
 
-    def search_from_image(self, image_file, options, request=None):
+    def search_from_image(self, image_file, options, wait_until_finished=True, request=None):
 
         data = {'compare_threshold': 0.6}
 
@@ -582,8 +582,14 @@ class VerifyAssure(VideoAIUser):
                               allow_redirects=True,
                               verify=VERIFY_SSL)
             json_data = r.json()
-        except:
-            raise FailedAPICall('Verify Assure')
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
+
+        except Exception as e:
+            raise FailedAPICall('Verify Assure: {}'.format(e))
 
         if self.verbose:
             print(print_http_response(r))
@@ -594,7 +600,7 @@ class VerifyAssure(VideoAIUser):
         return json_data
 
     def create_subject_from_image_files(self, images, name, subject_data,
-                                        watchlist_data, location, request=None):
+                                        watchlist_data, location, wait_until_finished=True, request=None):
 
         self.end_point = 'verify_assure_enrollment'
 
@@ -605,12 +611,7 @@ class VerifyAssure(VideoAIUser):
         else:
             files.append(('images', ('{}'.format(images), open("{0}".format(images), mode='rb'), 'image/*')))
 
-        data = {
-            'min_size': 80,
-            'recognition': False
-        }
-
-        data['name'] = name
+        data = {'recognition': False, 'name': name}
 
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
@@ -653,6 +654,12 @@ class VerifyAssure(VideoAIUser):
                               verify=VERIFY_SSL)
 
             json_data = r.json()
+            print (json_data)
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
 
             if self.verbose:
                 print(print_http_response(r))
@@ -664,17 +671,11 @@ class VerifyAssure(VideoAIUser):
         return json_data
 
     def create_subject_from_filenames(self, filenames, name, subject_data,
-                                        watchlist_data, location, request=None):
+                                        watchlist_data, location, wait_until_finished=True, request=None):
 
         self.end_point = 'verify_assure_enrollment'
 
-        data = {
-            'min_size': 80,
-            'recognition': False
-        }
-
-        data['name'] = name
-        data['image_file_names'] = json.dumps(filenames)
+        data = {'recognition': False, 'name': name, 'image_file_names': json.dumps(filenames)}
 
         # for subject data we need to convert whatever object to a str/unicode
         if subject_data:
@@ -716,6 +717,11 @@ class VerifyAssure(VideoAIUser):
                               verify=VERIFY_SSL)
 
             json_data = r.json()
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
 
             if self.verbose:
                 print(print_http_response(r))
