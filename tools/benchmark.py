@@ -214,16 +214,20 @@ class ImportImageDir:
         if json_content['status'] != 'success':
             raise Exception("Problem creating unittest watchlist ({})".format(json_content))
 
-    def get_subject_data(self, image_dir, number_of_subjects, max_faces_per_subject, subject_skip=0, id_list=None):
+    def get_subject_data(self, image_dir, number_of_subjects, max_faces_per_subject, subject_skip=0, id_list=None, max_images_total=-1):
         if args.verbose:
             print("Importing {} subjects from image dir {}".format(number_of_subjects, image_dir))
 
         import_data = Dict()
         skipped = 0
+        total_images = 0
         if id_list:
             with open(id_list, 'r') as id_file:
                 for line in id_file:
                     the_id = line.strip()
+                    import_data[the_id] = []
+                    if total_images >= max_images_total > 0:
+                        continue
                     if subject_skip > 0 and skipped < subject_skip:
                         skipped += 1
                         if args.verbose:
@@ -234,12 +238,14 @@ class ImportImageDir:
                         print("Image Dir {} does not exist".format(id_image_dir))
                         continue
                     files = [f for f in listdir(id_image_dir) if isfile(join(id_image_dir, f))]
-                    import_data[the_id] = []
                     subject_images = 0
                     for file in files:
+                        if total_images >= max_images_total > 0:
+                            break
                         (image_name, ext) = splitext(file)
-                        subject_images += 1
                         import_data[the_id].append(join(id_image_dir, file))
+                        subject_images += 1
+                        total_images += 1
                         if subject_images >= max_faces_per_subject > 0:
                             break
                     if args.verbose:
@@ -251,16 +257,21 @@ class ImportImageDir:
             for root, subdirs, files in os.walk(image_dir):
                 for subdir in subdirs:
                     subject_id = subdir
+                    import_data[subject_id] = []
+                    if total_images >= max_images_total > 0:
+                        continue
                     full_path = '{}/{}'.format(image_dir, subdir)
                     files = [f for f in listdir(full_path) if isfile(join(full_path, f))]
-                    import_data[subject_id] = []
                     subject_images = 0
                     for file in files:
+                        if total_images >= max_images_total > 0:
+                            break
                         if subject_images >= int(max_faces_per_subject) > 0:
                             break
                         (image_name, ext) = splitext(file)
                         import_data[subject_id].append(join(full_path, file))
                         subject_images += 1
+                        total_images += 1
                     if args.verbose:
                         print("Subject {} Images {}".format(subject_id, subject_images))
                     if len(import_data) >= number_of_subjects > 0:
@@ -473,6 +484,7 @@ parser.add_argument('--delete-subjects', dest='delete_subjects', action='store_t
 parser.add_argument('--max-subjects', dest='max_subjects', type=int, default=-1, help='How many subjects to enrol.')
 parser.add_argument('--skip-subjects', dest='subject_skip', type=int, default=0, help='How many subjects to skip from beginning of list.')
 parser.add_argument('--max-images', dest='max_images', type=int, default=-1, help='Maximum number of images per subject.')
+parser.add_argument('--max-images-total', dest='max_images_total', type=int, default=-1, help='Maximum number of images to process.')
 parser.add_argument('--iterations', dest='iterations', type=int, default=1, help='Number of times to iterate over data.')
 parser.add_argument('--enrol', dest='enrol', action='store_true', help='Enrol subjects instead of searching them.')
 parser.add_argument('--verify-assure-enrol', dest='verify_assure_enrol', action='store_true', help='Verify Assure Enrol subjects instead of searching them.')
@@ -502,7 +514,8 @@ subject_data = importer.get_subject_data(image_dir=args.image_dir,
                                          id_list=args.id_list,
                                          number_of_subjects=args.max_subjects,
                                          max_faces_per_subject=args.max_images,
-                                         subject_skip=args.subject_skip)
+                                         subject_skip=args.subject_skip,
+                                         max_images_total=args.max_images_total)
 
 
 results = Dict()
