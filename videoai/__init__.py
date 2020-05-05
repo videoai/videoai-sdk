@@ -1529,11 +1529,14 @@ class ImportData(VideoAIUser):
                 data = {}
             data['filename'] = input_file
 
+            files = {'input_file': open("{0}".format(input_file), mode='rb')}
+
             if SIGN_REQUEST:
                 self.sign_request(url, method="POST", data=data, request=request)
 
             r = requests.post(url,
                               headers=self.header,
+                              files=files,
                               data=data,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
