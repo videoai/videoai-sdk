@@ -1,6 +1,6 @@
 #!/bin/env
 import os
-from videoai import FaceLogImage, DeleteSubjects
+from videoai import FaceLogImage, DeleteSubjects, VerifyAssure, VerifyAssureEnrollment
 from videoai.recognition import Recognition
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
@@ -14,14 +14,13 @@ from addict import Dict
 import pprint
 from tqdm import tqdm
 import logging as logger
-
-
-pp = pprint.PrettyPrinter(indent=4)
+from shortuuid import uuid
 
 def create_random_colour():
     r = lambda: random.randint(0, 255)
     colour = '#%02X%02X%02X' % (r(), r(), r())
     return colour
+
 
 watchlist = [
     {'name': 'High Risk', 'colour': create_random_colour(), 'threshold': 0.55, 'top_n': 10},
@@ -32,7 +31,6 @@ watchlist = [
     {'name': 'Restricted', 'colour': create_random_colour(), 'threshold': 0.55, 'top_n': 10},
     {'name': 'Athlete', 'colour': create_random_colour(), 'threshold': 0.55, 'top_n': 10}
 ]
-
 
 
 def timerfunc(func):
@@ -55,28 +53,7 @@ def timerfunc(func):
     return function_timer
 
 
-def search_from_image(face_log_image, image_path, compare_threshold=0.55, top_n=1):
-
-    try:
-        if args.verbose:
-            print('Searching from image {}'.format(image_path))
-
-        if not os.path.exists(image_path):
-            logger.warning('Image path does not exist {}'.format(image_path))
-            return False
-
-        results = face_log_image.apply(image_file=image_path,
-                                       compare_threshold=compare_threshold,
-                                       top_n=top_n,
-                                       recognition=True,
-                                       download=False,
-                                       wait_until_finished=True)
-        return True
-    except Exception as e:
-        if args.verbose:
-            pp.pprint(results)
-        logger.warning('Exception caught {}: {}'.format(e, image_path))
-        return False
+pp = pprint.PrettyPrinter(indent=4)
 
 
 def delete_subject(recognition, subject_id):
@@ -125,6 +102,90 @@ def enrol_from_image(face_log_image, recognition, subject_id, image_path):
         return False
 
 
+def search_from_image(face_log_image, image_path, compare_threshold=0.55, top_n=1):
+
+    try:
+        if args.verbose:
+            print('Searching from image {}'.format(image_path))
+
+        if not os.path.exists(image_path):
+            logger.warning('Image path does not exist {}'.format(image_path))
+            return False
+
+        results = face_log_image.apply(image_file=image_path,
+                                       compare_threshold=compare_threshold,
+                                       top_n=top_n,
+                                       recognition=True,
+                                       download=False,
+                                       wait_until_finished=True)
+        return True
+    except Exception as e:
+        if args.verbose:
+            pp.pprint(results)
+        logger.warning('Exception caught {}: {}'.format(e, image_path))
+        return False
+
+
+def verify_assure_enrol_from_image(verify_assure_enrollment, images, name, citizen_id):
+    try:
+        if args.verbose:
+            print('Verify Assure Enroll Subject {} from image {}'.format(images))
+
+        subject_data = {"citizen_id::citizen_id": citizen_id}
+
+        for image in images:
+            if not os.path.exists(image):
+                logger.warning('Image path does not exist: {}'.format(image))
+                return False, name, citizen_id
+
+        result = Dict(verify_assure_enrollment.create_subject_from_image_files(
+            images=images,
+            name=name,
+            subject_data=subject_data,
+            watchlist_data=None,
+            location=None
+        ))
+
+        if result.success != 'success':
+            return False, name, citizen_id
+
+        return True, citizen_id
+    except Exception as e:
+        if args.verbose:
+            pp.pprint(results)
+        print("Exception caught {}: {}".format(e, images))
+        return False, name, citizen_id
+
+
+def verify_assure_from_image(verify_assure, image_file, citizen_id):
+    try:
+        if args.verbose:
+            print('Verify Assure {} from image {}'.format(citizen_id, image_file))
+
+        if not os.path.exists(image_file):
+            logger.warning('Image path does not exist: {}'.format(image_file))
+            return False
+
+        options = {
+            'citizen_id': citizen_id
+        }
+
+        result = Dict(verify_assure.search_from_image(
+            image_file=image_file,
+            options=options
+        ))
+
+        if result.success != 'success':
+            return False
+
+        return True
+    except Exception as e:
+        if args.verbose:
+            pp.pprint(results)
+        print("Exception caught {}: {}".format(e, image_file))
+        return False
+
+
 class ImportImageDir:
 
     def __init__(self):
@@ -137,6 +198,12 @@ class ImportImageDir:
 
         self.face_log_image = FaceLogImage.create(key_file=args.key_file,
                                                   authentication_server=args.authentication_server)
+
+        self.verify_assure = VerifyAssure.create(key_file=args.key_file,
+                                                 authentication_server=args.authentication_server)
+
+        self.verify_assure_enrollment = VerifyAssureEnrollment.create(key_file=args.key_file,
+                                                                      authentication_server=args.authentication_server)
 
     def create_watchlists(self):
         success, content, headers = self.recognition.create_watchlist_for_unittest(watchlist=watchlist)
@@ -290,6 +357,86 @@ class ImportImageDir:
 
         return success, failure
 
+    def verify_assure_enrol_data(self, import_data, prefix=None):
+
+        # get the watchlists
+        permitted_watchlists = self.recognition.list_watchlists()
+        if args.verbose:
+            print(permitted_watchlists)
+
+        permitted_watchlists = [x['id'] for x in permitted_watchlists['data']['watchlists']]
+
+        # Make sure all subjects appear in database
+        results = []
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            for subject, images in import_data.items():
+
+                if prefix:
+                    citizen_id = '{}{}'.format(prefix, subject)
+                else:
+                    citizen_id=subject
+
+                results.append(executor.submit(verify_assure_enrol_from_image,
+                                               self.verify_assure_enrollment,
+                                               images,
+                                               subject,
+                                               citizen_id))
+
+            print("Processing 'verify assure enrollment' jobs...")
+            for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
+                pass
+
+            executor.shutdown(wait=True)
+
+        success = 0
+        failure = 0
+
+        for result in results:
+            result_ok = result.result()[0]
+            name = result.result()[1]
+            citizen_id = result.result()[2]
+            if result_ok:
+                success += 1
+            else:
+                failure += 1
+
+        return success, failure
+
+    def verify_assure_data(self, import_data, prefix=None):
+
+        # Make sure all subjects appear in database
+        results = []
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            for subject, images in import_data.items():
+                if prefix:
+                    citizen_id = '{}{}'.format(prefix, subject)
+                else:
+                    citizen_id = subject
+                for image in images:
+                    results.append(executor.submit(verify_assure_from_image,
+                                                   self.verify_assure,
+                                                   image,
+                                                   citizen_id))
+
+            print("Processing 'verify assure' jobs...")
+            for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
+                pass
+
+            executor.shutdown(wait=True)
+
+        success = 0
+        failure = 0
+
+        for result in results:
+            if result.result():
+                success += 1
+            else:
+                failure += 1
+
+        return success, failure
+
+
+    @timerfunc
     def delete_all_subjects(self):
         print("Deleting all subjects...")
         subjects = self.recognition.list_subjects()
@@ -324,10 +471,12 @@ parser.add_argument('--authentication-server', dest='authentication_server', def
 parser.add_argument('--create-watchlists', dest='create_watchlists', action='store_true', help='Create the watchlists.')
 parser.add_argument('--delete-subjects', dest='delete_subjects', action='store_true', default=False, help='Delete all the subjects.')
 parser.add_argument('--max-subjects', dest='max_subjects', type=int, default=-1, help='How many subjects to enrol.')
-parser.add_argument('--subject_skip', dest='subject_skip', type=int, default=0, help='How many subjects to skip from beginning of list.')
+parser.add_argument('--skip-subjects', dest='subject_skip', type=int, default=0, help='How many subjects to skip from beginning of list.')
 parser.add_argument('--max-images', dest='max_images', type=int, default=-1, help='Maximum number of images per subject.')
 parser.add_argument('--iterations', dest='iterations', type=int, default=1, help='Number of times to iterate over data.')
 parser.add_argument('--enrol', dest='enrol', action='store_true', help='Enrol subjects instead of searching them.')
+parser.add_argument('--verify-assure-enrol', dest='verify_assure_enrol', action='store_true', help='Verify Assure Enrol subjects instead of searching them.')
+parser.add_argument('--verify-assure', dest='verify_assure', action='store_true', help='Verify Assure Verify subjects instead of searching them.')
 parser.add_argument('--log-file', dest='log_file', default='benchmark.log', help='Write logs to this file.')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose.')
 args = parser.parse_args()
@@ -365,6 +514,10 @@ for i in range(0, args.iterations):
     tic = time.time()
     if args.enrol:
         (success, failure) = importer.enrol_data(subject_data)
+    elif args.verify_assure_enrol:
+        (success, failure) = importer.verify_assure_enrol_data(subject_data, prefix='iter_{}:'.format(i))
+    elif args.verify_assure:
+        (success, failure) = importer.verify_assure_data(subject_data, prefix='iter_{}:'.format(i))
     else:
         (success, failure) = importer.search_data(subject_data)
 

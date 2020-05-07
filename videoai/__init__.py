@@ -347,6 +347,7 @@ class VideoAIUser(object):
 
             r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
             json_data = r.json()
+
             if self.verbose:
                 print(json.dumps(json_data, indent=4, sort_keys=True))
 
@@ -502,6 +503,187 @@ class VideoAIUser(object):
             return False, None, None
 
 
+class VerifyAssureEnrollment(VideoAIUser):
+
+    def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
+        super(VerifyAssureEnrollment, self).__init__(token=token, host=host, authentication_server=authentication_server,
+                                           client_id=client_id, client_secret=client_secret, verbose=verbose)
+        self.end_point = 'verify_assure_enrollment'
+
+    def request(self, filename_on_disc, options, request=None):
+
+        # File has already been uploaded on disc, use filename
+        file_size = os.path.getsize(filename_on_disc) / 1000000.0
+        print('Requested Verify Assure Enrollment on {0} ({1} Mb)'.format(filename_on_disc, file_size))
+
+        data = {'compare_threshold': 0.6}
+
+        if not os.path.isfile(filename_on_disc):
+            raise FailedAPICall('Input file \'{}\' does not exists'.format(filename_on_disc))
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if filename_on_disc:
+                data['file_image_name'] = filename_on_disc
+
+            data.update(options)
+
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+            r = requests.post(url, headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+            json_data = r.json()
+        except:
+            raise FailedAPICall('Verify Assure Enrollment')
+
+        if self.verbose:
+            print(print_http_response(r))
+
+        if json_data['status'] != 'success':
+            raise FailedAPICall("Verify Assure request failed: {}".format(r.json()['message']))
+
+        return json_data
+
+    def create_subject_from_image_files(self, images, name, subject_data,
+                                        watchlist_data, location, wait_until_finished=True, request=None):
+
+        try:
+            files = []
+            if isinstance(images, list):
+                for image in images:
+                    files.append(('images', ('{}'.format(image), open("{0}".format(image), mode='rb'), 'image/*')))
+            else:
+                files.append(('images', ('{}'.format(images), open("{0}".format(images), mode='rb'), 'image/*')))
+
+            data = {'recognition': False, 'name': name}
+        except IOError as err:
+            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment): {}".format(err))
+
+        # for subject data we need to convert whatever object to a str/unicode
+        if subject_data:
+            d = dict()
+            for key, value in subject_data.iteritems():
+                if isinstance(value, int):
+                    d['{}::int'.format(key)] = str(value)
+                elif isinstance(value, float):
+                    d['{}::float'.format(key)] = str(value)
+                elif isinstance(value, basestring):  # str or unicode
+                    if len(key.split('::')) == 2:
+                        d[key] = value
+                    else:
+                        d['{}::string'.format(key)] = value
+                elif isinstance(value, datetime.date):
+                    d['{}::date'.format(key)] = value.isoformat()
+                elif isinstance(value, list):
+                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                else:
+                    print 'Unknown value type'
+            data['subject_data'] = json.dumps(d, ensure_ascii=False)
+
+        if watchlist_data:
+            data['watchlist_data'] = json.dumps(watchlist_data)
+
+        if location is not None:
+            data['location'] = location
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              files=files,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if json_data['status'] != 'success':
+                return json_data
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
+
+            if self.verbose:
+                print(print_http_response(r))
+
+        except Exception as err:
+            print("ERR: {}".format(err))
+            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
+
+        return json_data
+
+    def create_subject_from_filenames(self, filenames, name, subject_data,
+                                      watchlist_data, location, wait_until_finished=True, request=None):
+
+        data = {'recognition': False, 'name': name, 'image_file_names': json.dumps(filenames)}
+
+        # for subject data we need to convert whatever object to a str/unicode
+        if subject_data:
+            d = dict()
+            for key, value in subject_data.iteritems():
+                if isinstance(value, int):
+                    d['{}::int'.format(key)] = str(value)
+                elif isinstance(value, float):
+                    d['{}::float'.format(key)] = str(value)
+                elif isinstance(value, basestring):  # str or unicode
+                    if len(key.split('::')) == 2:
+                        d[key] = value
+                    else:
+                        d['{}::string'.format(key)] = value
+                elif isinstance(value, datetime.date):
+                    d['{}::date'.format(key)] = value.isoformat()
+                elif isinstance(value, list):
+                    d['{}::list'.format(key)] = [unicode(i) for i in value]
+                else:
+                    print 'Unknown value type'
+            data['subject_data'] = json.dumps(d, ensure_ascii=False)
+
+        if watchlist_data:
+            data['watchlist_data'] = json.dumps(watchlist_data)
+
+        if location is not None:
+            data['location'] = location
+
+        url = "{0}/{1}".format(self.base_url, self.end_point)
+
+        try:
+            if SIGN_REQUEST:
+                self.sign_request(url, data=data, method="POST", request=request)
+
+            r = requests.post(url,
+                              headers=self.header,
+                              data=data,
+                              allow_redirects=True,
+                              verify=VERIFY_SSL)
+
+            json_data = r.json()
+
+            if json_data['status'] != 'success':
+                return json_data
+
+            if not wait_until_finished:
+                return json_data
+
+            json_data = self.wait(json_data)
+
+            if self.verbose:
+                print(print_http_response(r))
+
+        except Exception as err:
+            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
+
+        return json_data
+
+
 class VerifyAssure(VideoAIUser):
     def __init__(self, token, host, authentication_server, client_id, client_secret, verbose=False):
         super(VerifyAssure, self).__init__(token=token, host=host, authentication_server=authentication_server,
@@ -576,12 +758,16 @@ class VerifyAssure(VideoAIUser):
 
             if SIGN_REQUEST:
                 self.sign_request(url, data=data, method="POST", request=request)
+
             r = requests.post(url, headers=self.header,
                               data=data,
                               files=files,
                               allow_redirects=True,
                               verify=VERIFY_SSL)
             json_data = r.json()
+
+            if json_data['status'] != 'success':
+                return json_data
 
             if not wait_until_finished:
                 return json_data
@@ -598,154 +784,6 @@ class VerifyAssure(VideoAIUser):
             raise FailedAPICall("Verify Assure request failed: {}".format(r.json()['message']))
 
         return json_data
-
-    def create_subject_from_image_files(self, images, name, subject_data,
-                                        watchlist_data, location, wait_until_finished=True, request=None):
-
-        self.end_point = 'verify_assure_enrollment'
-
-        files = []
-        if isinstance(images, list):
-            for image in images:
-                files.append(('images', ('{}'.format(image), open("{0}".format(image), mode='rb'), 'image/*')))
-        else:
-            files.append(('images', ('{}'.format(images), open("{0}".format(images), mode='rb'), 'image/*')))
-
-        data = {'recognition': False, 'name': name}
-
-        # for subject data we need to convert whatever object to a str/unicode
-        if subject_data:
-            d = dict()
-            for key, value in subject_data.iteritems():
-                if isinstance(value, int):
-                    d['{}::int'.format(key)] = str(value)
-                elif isinstance(value, float):
-                    d['{}::float'.format(key)] = str(value)
-                elif isinstance(value, basestring):  # str or unicode
-                    if len(key.split('::')) == 2:
-                        d[key] = value
-                    else:
-                        d['{}::string'.format(key)] = value
-                elif isinstance(value, datetime.date):
-                    d['{}::date'.format(key)] = value.isoformat()
-                elif isinstance(value, list):
-                    d['{}::list'.format(key)] = [unicode(i) for i in value]
-                else:
-                    print 'Unknown value type'
-            data['subject_data'] = json.dumps(d, ensure_ascii=False)
-
-        if watchlist_data:
-            data['watchlist_data'] = json.dumps(watchlist_data)
-
-        if location is not None:
-            data['location'] = location
-
-        url = "{0}/{1}".format(self.base_url, self.end_point)
-        #print("URL {} data {} files {}".format(url, data, files))
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST", request=request)
-
-            r = requests.post(url,
-                              headers=self.header,
-                              data=data,
-                              files=files,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
-
-            json_data = r.json()
-            print (json_data)
-
-            if not wait_until_finished:
-                return json_data
-
-            json_data = self.wait(json_data)
-
-            if self.verbose:
-                print(print_http_response(r))
-
-        except Exception as err:
-            print("ERR: {}".format(err))
-            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
-
-        return json_data
-
-    def create_subject_from_filenames(self, filenames, name, subject_data,
-                                        watchlist_data, location, wait_until_finished=True, request=None):
-
-        self.end_point = 'verify_assure_enrollment'
-
-        data = {'recognition': False, 'name': name, 'image_file_names': json.dumps(filenames)}
-
-        # for subject data we need to convert whatever object to a str/unicode
-        if subject_data:
-            d = dict()
-            for key, value in subject_data.iteritems():
-                if isinstance(value, int):
-                    d['{}::int'.format(key)] = str(value)
-                elif isinstance(value, float):
-                    d['{}::float'.format(key)] = str(value)
-                elif isinstance(value, basestring):  # str or unicode
-                    if len(key.split('::')) == 2:
-                        d[key] = value
-                    else:
-                        d['{}::string'.format(key)] = value
-                elif isinstance(value, datetime.date):
-                    d['{}::date'.format(key)] = value.isoformat()
-                elif isinstance(value, list):
-                    d['{}::list'.format(key)] = [unicode(i) for i in value]
-                else:
-                    print 'Unknown value type'
-            data['subject_data'] = json.dumps(d, ensure_ascii=False)
-
-        if watchlist_data:
-            data['watchlist_data'] = json.dumps(watchlist_data)
-
-        if location is not None:
-            data['location'] = location
-
-        url = "{0}/{1}".format(self.base_url, self.end_point)
-        #print("DATA {}".format(data))
-        try:
-            if SIGN_REQUEST:
-                self.sign_request(url, data=data, method="POST", request=request)
-
-            r = requests.post(url,
-                              headers=self.header,
-                              data=data,
-                              allow_redirects=True,
-                              verify=VERIFY_SSL)
-
-            json_data = r.json()
-
-            if not wait_until_finished:
-                return json_data
-
-            json_data = self.wait(json_data)
-
-            if self.verbose:
-                print(print_http_response(r))
-
-        except Exception as err:
-            raise FailedAPICall("Failed to call Create Subject From Images (VerifyAssureEnrollment)")
-
-        return json_data
-
-    def task(self, job_id, request=None):
-        '''
-        Get a specific task
-        :return:
-        '''
-        url = "{0}/{1}/{2}".format(self.base_url, self.end_point, job_id)
-
-        if SIGN_REQUEST:
-            self.sign_request(url, data=None, method="GET", request=request)
-
-        r = requests.get(url, headers=self.header, allow_redirects=True, verify=VERIFY_SSL)
-        if self.verbose:
-            print_http_response(r)
-
-        return r.json()
 
 
 class VideoAIClient(VideoAIUser):
