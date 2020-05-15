@@ -340,7 +340,7 @@ class ImportImageDir:
 
         return success, failure
 
-    def search_data(self, import_data):
+    def search_data(self, import_data, compare_threshold, top_n):
 
         # Lets add faces to each subject using FaceLogImage
         number_of_faces = 0
@@ -351,7 +351,7 @@ class ImportImageDir:
                 for image in images:
                     results.append(executor.submit(search_from_image,
                                                    self.face_log_image,
-                                                   image))
+                                                   image, compare_threshold, top_n))
             print("Processing 'searching' jobs...")
             for f in tqdm(concurrent.futures.as_completed(results), total=len(results), smoothing=0):
                 pass
@@ -490,6 +490,8 @@ parser.add_argument('--enrol', dest='enrol', action='store_true', help='Enrol su
 parser.add_argument('--verify-assure-enrol', dest='verify_assure_enrol', action='store_true', help='Verify Assure Enrol subjects instead of searching them.')
 parser.add_argument('--verify-assure', dest='verify_assure', action='store_true', help='Verify Assure Verify subjects instead of searching them.')
 parser.add_argument('--log-file', dest='log_file', default='benchmark.log', help='Write logs to this file.')
+parser.add_argument('--threshold', dest='threshold', type=float, default=0.55, help='Search threshold')
+parser.add_argument('--top-n', dest='top_n', type=int, default=1, help='Top N results in search')
 parser.add_argument('--verbose', dest='verbose', action='store_true', help='Be more verbose.')
 args = parser.parse_args()
 
@@ -532,7 +534,7 @@ for i in range(0, args.iterations):
     elif args.verify_assure:
         (success, failure) = importer.verify_assure_data(subject_data, prefix='iter_{}:'.format(i))
     else:
-        (success, failure) = importer.search_data(subject_data)
+        (success, failure) = importer.search_data(subject_data, args.threshold, args.top_n)
 
     toc = time.time()
     seconds = toc-tic
